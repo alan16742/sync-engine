@@ -105,7 +105,7 @@ export function renderTogglableValue({
 }): (setting: Setting) => void {
 	return (setting) => {
 		setting
-			.setClass('sync-engine-togglable-value')
+			.setClass('sync-engine-column')
 			.addText((text) => {
 				text.setPlaceholder(placeholder).setValue(formatType(field.value, type));
 				reactivelyValidate<number>({
@@ -152,6 +152,7 @@ export function generateEditableList<T>({
 	render,
 	translations: { add, empty, heading },
 	extraButtons,
+	reorder,
 }: {
 	memoryDB: DatabaseSync<EphemeralEditableListSchema>;
 	items: Array<T>;
@@ -172,18 +173,15 @@ export function generateEditableList<T>({
 			save: () => void,
 		) => void
 	>;
+	reorder?: boolean;
 }): SettingDefinitionList {
 	const ephemeralStore = memoryDB.getStore('ephemeralEditableLists');
-	const existingList = ephemeralStore.get(identifier);
-	let list: Array<EphemeralEditableItem<T>>;
-	if (existingList) list = existingList;
-	else {
-		list = items.map((value) => ({ new: false, valid: true, value }));
-		ephemeralStore.set(identifier, list);
-	}
+	const list: Array<EphemeralEditableItem<T>> =
+		ephemeralStore.get(identifier) ??
+		items.map((value) => ({ new: false, valid: true, value }));
+	ephemeralStore.set(identifier, list);
 	const saveEdit = () => {
 		const newList = list.filter(({ valid }) => valid).map(({ value }) => value);
-		if (JSON.stringify(newList) === JSON.stringify(items)) return;
 		items.length = 0;
 		items.push(...newList);
 		void saveSettings();
@@ -205,8 +203,9 @@ export function generateEditableList<T>({
 			name: '',
 			render: (setting) => {
 				setting.settingEl.addClass('sync-engine-editable-list');
-				setting.settingEl.querySelector('.setting-item-control')?.addClass('w-100%!');
-				return render(setting, item, saveEdit);
+				const cleanup = render(setting, item, saveEdit);
+				if (item.new) item.new = false;
+				return cleanup;
 			},
 			searchable: false,
 		})),
@@ -215,6 +214,14 @@ export function generateEditableList<T>({
 			saveEdit();
 			rerenderSettingTab();
 		},
+		onReorder: reorder
+			? (oldIndex, newIndex) => {
+					const [moved] = list.splice(oldIndex, 1);
+					list.splice(newIndex, 0, moved);
+					saveEdit();
+					rerenderSettingTab();
+				}
+			: undefined,
 		type: 'list',
 	};
 }

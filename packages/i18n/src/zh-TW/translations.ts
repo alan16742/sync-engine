@@ -1,12 +1,11 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zhTW: Translations = {
-	addExclusionRule: '新增排除規則',
 	addHeader: '新增標頭',
-	addInclusionRule: '新增包含規則',
 	addRecord: '新增紀錄',
 	addSecretHeader: '新增加密標頭',
 	addSource: '新增來源',
+	addStrategy: '新增策略',
 	asymmetricStorage: '非對稱儲存',
 	asymmetricStorageDescription: () =>
 		createFragment((frag) => {
@@ -30,7 +29,7 @@ const zhTW: Translations = {
 				});
 				ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
 				ol.createEl('li', {
-					text: '若此儲存庫先前未啟用非對稱儲存即進行過上傳，則必須執行遷移。',
+					text: '若此儲存庫先前未啟用非對稱儲存即進行過同步，則必須執行遷移。',
 				});
 			} else {
 				frag.createEl('p', { text: '在停用非對稱儲存前，請務必留意以下幾點：' });
@@ -38,7 +37,7 @@ const zhTW: Translations = {
 				ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
 				ol.createEl('li', {
-					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下上傳，則必須執行遷移。',
+					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下同步，則必須執行遷移。',
 				});
 			}
 		}),
@@ -47,10 +46,10 @@ const zhTW: Translations = {
 	awaitingConfirmation: '等待確認',
 	backend: '儲存後端',
 	backendDescription: '選擇要使用的雲端服務。後端支援由模組提供。',
+	backendNotInstalled: (name) => `未安裝後端「${name}」！`,
 	bidirectional: '雙向同步',
 	cancel: '取消',
 	cancelled: '已取消',
-	caseSensitive: '區分大小寫',
 	checkConnection: '測試連線',
 	checkConnectionFailed: '連線測試失敗',
 	checkConnectionSuccess: '連線測試成功',
@@ -85,6 +84,7 @@ const zhTW: Translations = {
 	conflictResolveStrategy: '衝突解決策略',
 	conflictResolveStrategyDescription:
 		'選擇當遠端與本地檔案自上次同步後皆有修改時的解決方式。更多策略可透過模組提供。',
+	conflictResolveStrategyNotInstalled: (strategy) => `衝突解決策略 “${strategy}” 未安裝！`,
 	controls: '控制項',
 	createLocalDir: '建立本地資料夾',
 	createRemoteDir: '建立遠端資料夾',
@@ -100,6 +100,7 @@ const zhTW: Translations = {
 	diffMatchPatch: '文字合併',
 	disableModule: '停用模組',
 	done: '完成',
+	dontSync: '不同步',
 	download: '下載',
 	downloadModule: '下載模組',
 	edit: '編輯',
@@ -107,22 +108,6 @@ const zhTW: Translations = {
 	enable: '啟用',
 	enableDescription: '設定是否載入此模組。',
 	enableModule: '啟用模組',
-	exclusionRules: '排除規則',
-	exclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'符合這些 Glob 萬用字元模式的檔案或資料夾將不會進行同步。若要排除特定檔案，請記得加上副檔名（例如 ',
-			);
-			frag.createEl('code', { text: '.md' });
-			frag.appendText('）。請參閱 ');
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: '設定文件',
-			});
-			frag.appendText('以瞭解設定指南。');
-		}),
 	executing: '執行中',
 	export: '匯出',
 	exportLogsDescription: '將外掛程式紀錄匯出至儲存庫中的檔案。請在欄位中設定紀錄匯出目錄。',
@@ -135,8 +120,7 @@ const zhTW: Translations = {
 	failedToFetchSource: (url) => `無法從 "${url}" 取得來源`,
 	failedToLoadModule: (name) => `載入模組 "${name}" 失敗`,
 	features: '功能特徵',
-	filterPlaceholder: '例如 temp.md, .trash/**/*',
-	filterRules: '過濾規則',
+	globPlaceholder: '例如 temp.md, .trash/**/*',
 	headerKeyPlaceholder: '標頭名稱',
 	headerValuePlaceholder: '標頭數值',
 	hide: '隱藏',
@@ -152,20 +136,6 @@ const zhTW: Translations = {
 		}),
 	iconPlaceholder: '輸入圖示代碼（例如 puzzle）',
 	idle: '待命',
-	inclusionRules: '包含規則',
-	inclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'即使符合排除規則，只要符合這些 Glob 萬用字元模式的檔案或資料夾仍會進行同步。請參閱 ',
-			);
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: '設定文件',
-			});
-			frag.appendText('以瞭解設定指南。');
-		}),
 	installModuleFromFile: '從檔案安裝模組',
 	installed: '已安裝',
 	integrityVerification: '完整性驗證',
@@ -193,13 +163,18 @@ const zhTW: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步過程中的同時請求數量。此選項適用於有請求速率限制的服務。請在欄位中修改併發限制。',
 	maxRequestConcurrencyPlaceholder: '輸入併發限制',
-	migrationDescription:
-		'根據儲存庫的大小，遷移過程可能需要數秒至數分鐘。若您已在其他裝置上完成遠端遷移，可以跳過此步驟。\n\n是否立即開始遷移？',
-	migrationFailed: '遷移失敗',
-	migrationPhase1Description: '確保本地狀態為最新',
-	migrationPhase2Description: '清理遠端檔案與紀錄',
-	migrationPhase3Description: '以新結構建置遠端內容',
-	migrationProcess: '遷移進度',
+	migrationInstruction: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '請參閱' });
+			p1.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				text: '文件頁面',
+			});
+			p1.appendText(
+				'了解如何安全地手動執行遷移。基於資料安全考量，Sync Engine 不會自動執行遷移。若您已遷移過雲端儲存，可以忽略此警告。',
+			);
+			frag.createEl('p', { text: '確認切換？' });
+		}),
 	minRequestInterval: '最小請求間隔',
 	minRequestIntervalDescription:
 		'限制同步過程中連續請求之間的最小時間間隔。此選項適用於有請求速率限制的服務。請在欄位中修改間隔時間。',
@@ -232,13 +207,14 @@ const zhTW: Translations = {
 	noInstalledModulesFound: '未找到已安裝的模組。',
 	noMatchingModulesFound: '未找到符合條件的模組。',
 	noModulesAvailable: '無可用模組。',
-	noRuleConfigured: '尚未設定規則。',
 	noSourceConfigured: '尚未設定來源。',
+	noStrategyConfigured: '尚未設定策略。',
 	none: '無',
 	noticeStatusOnMobile: '行動裝置同步狀態通知',
 	noticeStatusOnMobileDescription: '同步進行時於行動裝置上顯示通知訊息（取代桌面版的狀態列）。',
 	official: '官方',
 	openReadme: '開啟模組的 README 頁面。',
+	pleaseSetBackend: '請先設定後端！',
 	readmePage: 'README 頁面',
 	readmePageDescription: '設定模組的選用 README 頁面，留空表示無 README。',
 	readmePagePlaceholder: 'https://example.com/my-module',
@@ -285,7 +261,6 @@ const zhTW: Translations = {
 		'由於 Sync Engine 外掛程式版本過舊，部分模組已隱藏。請更新外掛程式以查看完整模組目錄。',
 	speed: '速度',
 	speedLabelDescription: '正確設定此選項可能會提升同步速度。',
-	startMigration: '開始遷移',
 	startNonInteractiveSync: '啟動非互動式同步',
 	startSync: '開始同步',
 	startupSync: '啟動時同步',
@@ -295,8 +270,18 @@ const zhTW: Translations = {
 	stopSync: '停止同步',
 	syncProgress: '同步進度',
 	syncStrategy: '同步策略',
-	syncStrategyDescription: '選擇用來處理檔案變更的同步策略。更多策略可透過模組提供。',
-	toggleWithoutMigration: '直接切換（不執行遷移）',
+	syncStrategyDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'根據 Glob 規則為不同的檔案設定不同的同步策略。當有多個規則配對至同一個檔案時，以最後一個規則為準。詳見',
+			);
+			frag.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
+				text: '文件頁面',
+			});
+			frag.appendText('。');
+		}),
+	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安裝！`,
 	untrustedModule: '非信任模組',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
@@ -328,9 +313,11 @@ const zhTW: Translations = {
 			li5.appendText('修改時間：');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', { text: '請避免啟用來源不明的模組。' });
+			p2.createEl('strong', {
+				text: '為了防止惡意程式碼執行，Sync Engine 現需取得您的明確同意。',
+			});
 			p2.appendText(
-				'如果您不知道它來自何處，請直接將其刪除；如果它由您掌控，您可以選擇「設定」並加以啟用。如需了解此警告的說明，請參閱 ',
+				'若該模組在您的控制範圍內，您可以選擇「設定」並將其啟用；若您不確定其來源，亦可將其刪除。關於此警告的詳細說明，請參閱 ',
 			);
 			p2.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },

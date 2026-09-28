@@ -38,14 +38,14 @@ Returning `undefined` from `apply` declines the entry.
 Register a remote backend implementation. See [file system: RootFs](./file-system#rootfs) for the contract.
 
 ```ts
-type CheckConnectionResult = { success: true } | { success: false; reason: string };
-
 type RemoteFsEntry = {
   prettyName: () => string;
   instantiate: (request: Request) => RootFs;
-  checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
+  checkConnection: (request: Request) => MaybePromise<void | Error>;
 };
 ```
+
+`checkConnection` resolves `undefined` on success, or an `Error` carrying the failure reason.
 
 ```ts
 ctx.registerRemoteFs(id: string, entry: RemoteFsEntry): () => boolean;
@@ -104,7 +104,7 @@ ctx.registerTrigger(key: string, entry: TriggerEntry): () => boolean;
 
 ## Decider
 
-Register a sync decision strategy. See [sync: decider](./sync#decider).
+Register a sync decision strategy. Stats are bucketed by the registered ID during planning, so each ID doubles as a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. See [sync: decider](./sync#decider).
 
 ```ts
 type DeciderEntry = { decider: Decider; prettyName: () => string };

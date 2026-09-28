@@ -8,7 +8,6 @@ import type { BatchOptimizer, Fs, MemoryControlSharedState } from '@/fs';
 import type { ControlsSettingTranslations } from '@/settings/controls';
 import type { DevelopmentSettingTranslations } from '@/settings/development';
 import type { FeaturesSettingTranslations } from '@/settings/features';
-import type { FilterSettingTranslations } from '@/settings/filter';
 import type { HeadSettingTranslations } from '@/settings/head';
 import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
 import type { ModulesTranslations } from '@/settings/module-management';
@@ -89,7 +88,6 @@ export default class Bootstrap {
 	} & ControlsSettingTranslations &
 		DevelopmentSettingTranslations &
 		FeaturesSettingTranslations &
-		FilterSettingTranslations &
 		HeadSettingTranslations &
 		MiscellaneousSettingTranslations &
 		UntrustedModuleTranslations &
@@ -158,6 +156,7 @@ export default class Bootstrap {
 			maxRequestConcurrency.enabled ? maxRequestConcurrency.value : Infinity;
 		const getMinInterval = () => (minRequestInterval.enabled ? minRequestInterval.value : 0);
 		const getDeletionConfirm = () => this.settings.confirmDeleteInAutoSync;
+		const logger = (log: string) => dispatch('logSync', log);
 
 		const context20000 = memoryDB.getStore('remoteContext20000');
 		registerTrigger('realtime', {
@@ -193,14 +192,6 @@ export default class Bootstrap {
 		registerTrigger('startup', {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 3000,
-		});
-		registerTrigger('migration', {
-			options: () => ({
-				decider: mirrorLocalDecider,
-				detectMoves: false,
-				remoteLister: () => [], // Remote has already been cleared in phase 2
-			}),
-			priority: 3980,
 		});
 		registerTrigger('nonInteractiveManual', { priority: 3990 });
 		registerTrigger('manual', {
@@ -364,15 +355,15 @@ export default class Bootstrap {
 		});
 
 		registerDecider('bidirectional', {
-			decider: bidirectionalDecider,
+			decider: (input) => bidirectionalDecider(input, logger),
 			prettyName: () => t('bidirectional'),
 		});
 		registerDecider('mirrorLocal', {
-			decider: mirrorLocalDecider,
+			decider: (input) => mirrorLocalDecider(input, logger),
 			prettyName: () => t('mirrorLocal'),
 		});
 		registerDecider('mirrorRemote', {
-			decider: mirrorRemoteDecider,
+			decider: (input) => mirrorRemoteDecider(input, logger),
 			prettyName: () => t('mirrorRemote'),
 		});
 

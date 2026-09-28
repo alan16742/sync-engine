@@ -23,9 +23,9 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 
 ### Core Functions
 
-- Bidirectional / mirror local / mirror-remote syncing.
 - Startup / periodic / save-on-change syncing.
-- Conflict resolution strategies (keep both / latest survive / keep remote / keep local / skip).
+- Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
+- Conflict resolve strategies (keep both / latest survive / keep remote / keep local / skip).
 - Rate / memory control options.
 - Custom headers.
 - You can extend most above features by writing modules.
@@ -59,7 +59,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 **Features**:
 
 - [Encryption](../deep-dive/modules/encryption): meticulously designed encryption with specially enhanced safety for cross-backend syncs.
-- [Smart Merge](../deep-dive/modules/smart-merge): conflict resolution strategy powered by recursive three-way merge.
+- [Smart Merge](../deep-dive/modules/smart-merge): conflict resolve strategy powered by recursive three-way merge.
 
 **Translations**:
 

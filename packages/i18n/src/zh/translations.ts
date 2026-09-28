@@ -1,12 +1,11 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zh: Translations = {
-	addExclusionRule: '添加排除规则',
 	addHeader: '添加请求头',
-	addInclusionRule: '添加包含规则',
 	addRecord: '添加记录',
 	addSecretHeader: '添加机密请求头',
 	addSource: '添加源',
+	addStrategy: '添加策略',
 	asymmetricStorage: '非对称存储',
 	asymmetricStorageDescription: () =>
 		createFragment((frag) => {
@@ -30,7 +29,7 @@ const zh: Translations = {
 				ol.createEl('li', { text: '如果您需要远程端保持人类可读性，请不要启用此功能。' });
 				ol.createEl('li', { text: '启用后，请确保所有设备都已启用非对称存储。' });
 				ol.createEl('li', {
-					text: '如果该库此前在未启用非对称存储的情况下上传过，则必须进行迁移。',
+					text: '如果该库此前在未启用非对称存储的情况下同步过，则必须进行迁移。',
 				});
 			} else {
 				frag.createEl('p', { text: '在禁用非对称存储之前，您需要注意以下几点：' });
@@ -38,7 +37,7 @@ const zh: Translations = {
 				ol.createEl('li', { text: '后续的所有上传都将镜像本地的层级结构。' });
 				ol.createEl('li', { text: '请确保所有设备都已禁用非对称存储。' });
 				ol.createEl('li', {
-					text: '如果该库此前在启用非对称存储的情况下上传过，则必须进行迁移。',
+					text: '如果该库此前在启用非对称存储的情况下同步过，则必须进行迁移。',
 				});
 			}
 		}),
@@ -47,10 +46,10 @@ const zh: Translations = {
 	awaitingConfirmation: '等待确认',
 	backend: '存储后端',
 	backendDescription: '选择要使用的云服务。后端由模块提供。',
+	backendNotInstalled: (name) => `未安装后端“${name}”！`,
 	bidirectional: '双向同步',
 	cancel: '取消',
 	cancelled: '已取消',
-	caseSensitive: '区分大小写',
 	checkConnection: '测试连接',
 	checkConnectionFailed: '测试连接失败',
 	checkConnectionSuccess: '测试连接成功',
@@ -85,6 +84,7 @@ const zh: Translations = {
 	conflictResolveStrategy: '冲突解决策略',
 	conflictResolveStrategyDescription:
 		'选择当本地和远程自上次同步以来都被修改过时，如何解决冲突。更多策略可以在模块中找到。',
+	conflictResolveStrategyNotInstalled: (strategy) => `冲突解决策略 “${strategy}” 未安装！`,
 	controls: '控制',
 	createLocalDir: '创建本地文件夹',
 	createRemoteDir: '创建远程文件夹',
@@ -100,6 +100,7 @@ const zh: Translations = {
 	diffMatchPatch: '合并',
 	disableModule: '禁用模块',
 	done: '完成',
+	dontSync: '不同步',
 	download: '下载',
 	downloadModule: '下载模块',
 	edit: '编辑',
@@ -107,22 +108,6 @@ const zh: Translations = {
 	enable: '启用',
 	enableDescription: '设置是否加载此模块。',
 	enableModule: '启用模块',
-	exclusionRules: '排除规则',
-	exclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'匹配这些 Glob 模式的文件 / 文件夹将不会被同步。如果您想排除文件，请记得添加文件扩展名（例如 ',
-			);
-			frag.createEl('code', { text: '.md' });
-			frag.appendText('）。请参阅 ');
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: '设置文档',
-			});
-			frag.appendText('了解配置指南。');
-		}),
 	executing: '正在执行',
 	export: '导出',
 	exportLogsDescription: '将插件日志导出到仓库中的文件。请在输入框中设置日志导出目录。',
@@ -135,8 +120,7 @@ const zh: Translations = {
 	failedToFetchSource: (url) => `从 “${url}” 获取源失败`,
 	failedToLoadModule: (name) => `加载模块 “${name}” 失败`,
 	features: '功能',
-	filterPlaceholder: '例如 temp.md, .trash/**/*',
-	filterRules: '过滤规则',
+	globPlaceholder: '例如 temp.md, .trash/**/*',
 	headerKeyPlaceholder: '请求头键',
 	headerValuePlaceholder: '请求头值',
 	hide: '隐藏',
@@ -152,20 +136,6 @@ const zh: Translations = {
 		}),
 	iconPlaceholder: '输入图标代码（例如 puzzle）',
 	idle: '空闲',
-	inclusionRules: '包含规则',
-	inclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'匹配排除规则但同时也匹配这些 Glob 模式的文件 / 文件夹仍会被同步。请参阅 ',
-			);
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: '设置文档',
-			});
-			frag.appendText('了解配置指南。');
-		}),
 	installModuleFromFile: '从文件安装模块',
 	installed: '已安装',
 	integrityVerification: '完整性验证',
@@ -195,13 +165,18 @@ const zh: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步过程中的同时请求数。此选项对于有请求频率限制的服务非常有用。在输入框中修改并发限制。',
 	maxRequestConcurrencyPlaceholder: '输入并发限制',
-	migrationDescription:
-		'迁移可能需要几秒钟到几分钟不等，具体取决于库的大小。如果您已在其他设备上迁移了远程端，可以跳过此迁移。\n\n现在开始迁移吗？',
-	migrationFailed: '迁移失败',
-	migrationPhase1Description: '确保本地状态是最新的',
-	migrationPhase2Description: '清理远程端和记录',
-	migrationPhase3Description: '使用新结构填充远程端',
-	migrationProcess: '迁移进程',
+	migrationInstruction: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '请参阅' });
+			p1.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				text: '文档页面',
+			});
+			p1.appendText(
+				'了解如何安全地手动执行迁移。出于数据安全考虑，Sync Engine 不会自动执行迁移。如果您已迁移过云端存储，可以忽略此警告。',
+			);
+			frag.createEl('p', { text: '确认切换？' });
+		}),
 	minRequestInterval: '最小请求间隔',
 	minRequestIntervalDescription:
 		'限制同步过程中连续请求之间的最小时间间隔。此选项对于有请求频率限制的服务非常有用。在输入框中修改间隔。',
@@ -234,14 +209,15 @@ const zh: Translations = {
 	noInstalledModulesFound: '未找到已安装的模块。',
 	noMatchingModulesFound: '未找到匹配的模块。',
 	noModulesAvailable: '没有可用模块。',
-	noRuleConfigured: '未配置规则。',
 	noSourceConfigured: '未配置源。',
+	noStrategyConfigured: '未配置策略。',
 	none: '无',
 	noticeStatusOnMobile: '移动端同步状态提示',
 	noticeStatusOnMobileDescription:
 		'同步进行时在移动设备上显示通知提示。在桌面端则会替换状态栏显示。',
 	official: '官方',
 	openReadme: '打开模块的 README 页面。',
+	pleaseSetBackend: '请先设置后端！',
 	readmePage: 'README 页面',
 	readmePageDescription: '设置模块的可选 README 页面，留空表示无 README。',
 	readmePagePlaceholder: 'https://example.com/my-module',
@@ -288,7 +264,6 @@ const zh: Translations = {
 		'由于 Sync Engine 插件版本过旧，部分模块已隐藏。请更新插件以查看完整模块目录。',
 	speed: '速度',
 	speedLabelDescription: '正确配置此设置可能会提高同步速度。',
-	startMigration: '开始迁移',
 	startNonInteractiveSync: '开始静默同步',
 	startSync: '开始同步',
 	startupSync: '启动同步',
@@ -297,8 +272,18 @@ const zh: Translations = {
 	stopSync: '停止同步',
 	syncProgress: '同步进度',
 	syncStrategy: '同步策略',
-	syncStrategyDescription: '选择用于解决文件更改的同步策略。更多策略可以在模块中找到。',
-	toggleWithoutMigration: '直接切换（不进行迁移）',
+	syncStrategyDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。详见',
+			);
+			frag.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
+				text: '文档页面',
+			});
+			frag.appendText('。');
+		}),
+	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安装！`,
 	untrustedModule: '非信任模块',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
@@ -330,9 +315,11 @@ const zh: Translations = {
 			li5.appendText('修改时间：');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', { text: '请避免启用来自未知来源的模块。' });
+			p2.createEl('strong', {
+				text: '为防止恶意代码执行，Sync Engine 现在需要获得您的明确同意。',
+			});
 			p2.appendText(
-				'如果您不知道它来自哪里，请直接将其删除；如果它在您的控制之下，您可以选择“配置”并启用它。有关此警告的说明，请参阅',
+				'如果您确认该模块在您的控制之下，可以选择“配置”并启用它；如果您不知道它来自哪里，可以选择将其删除。关于此警告的详细说明，请参阅 ',
 			);
 			p2.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
