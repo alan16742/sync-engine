@@ -13,6 +13,8 @@ Files keep their existing names, paths, and contents. The module creates no remo
 
 Creation time is best effort. OpenList's S3 implementation does not persist the original creation time. WebDAV accepts a creation-time header, but whether it affects the stored file depends on the underlying driver and operating system. A returned creation date may be the server's creation time, not the original file's. Missing or invalid dates are not invented. Local creation-time restoration also depends on Obsidian's adapter and the operating system.
 
+Folder times are not preserved. OpenList's S3 directory `PUT` handler returns before processing time metadata, and its local driver creates directories without restoring their times. Sending `X-Amz-Meta-Mtime` therefore cannot change a real folder's modification time through this interface. Supporting that requires an OpenList server change; the module does not pretend that the operation succeeded.
+
 The module targets OpenList. Other servers that accept the same headers may work, but are not guaranteed. S3 custom metadata takes precedence over the HTTP date; external writers must keep that metadata current. OpenList can cache S3 custom metadata in memory, so successful readback alone does not prove that a storage driver will preserve it across a server restart.
 
 ## Transfer Behavior
@@ -38,9 +40,19 @@ Some OpenList versions return an empty ETag in listings or `HEAD`, a transient u
 
 S3 streamed downloads also obtain headers before starting the local writer. Entries with usable listing ETags do not require additional traversal requests. All extra requests use the existing authentication, cancellation, retry, and rate-limiting pipeline.
 
+## Directory Discovery
+
+OpenList exposes real local directories through `CommonPrefixes` when listings use `delimiter=/`. Some versions omit their trailing `/`, while recursive listings return files without directory marker objects. The module normalizes these prefixes and supplies folder entries to the existing S3 backend parser, including nested and empty folders. Parents inferred from file keys are also included.
+
+Directory discovery follows pagination and processes at most eight directory queries concurrently. A failed or incomplete directory query aborts discovery instead of returning a partial result that could be interpreted as remote deletion. Folder entries still pass through the plugin's sync rules and reporters. Genuine remote deletions remain detectable; the module does not keep old folders merely because they appeared in sync records.
+
+Each full traversal refreshes its directory snapshot. Enabling the module clears the in-memory remote discovery cache so realtime fast mode cannot reuse an older file-only list. Persistent sync records remain available. These repairs make directories visible to sync planning; folder modification times do not participate in that visibility or deletion decision.
+
 ## Verification
 
-Unit tests cover request isolation, header placement, response compatibility, local write behavior, and module lifecycle. The repository's `scripts/verify-openlist-file-metadata.ts` additionally exercises the real S3 and WebDAV backends with normal files, empty files, a multipart file, special characters, rename, and overwrite. It checks content, restored modification time, and stable remote identities. Local files remain under `test-files`; the script removes its remote test files.
+Unit tests cover request isolation, header placement, response compatibility, local write behavior, and module lifecycle. Directory regressions use the real S3 backend and bidirectional decider to verify that 217 unchanged files plus 28 directories produce no tasks on the next sync, while genuinely removed directories still produce deletion tasks. Empty directories, missing slashes, pagination, filtering, and failed discovery are covered.
+
+The repository's `scripts/verify-openlist-file-metadata.ts` additionally exercises the real S3 and WebDAV backends with normal files, empty files, a multipart file, special characters, nested and empty directories, rename, and overwrite. It checks content, restored modification time, stable remote identities, and a second sync plan with no deletions. Local files remain under `test-files`; the script removes its remote test files.
 
 Run it with Bun and `--preload=./packages/openlist-file-metadata/test/mocks.ts`. Supply `OPENLIST_S3_ENDPOINT`, `OPENLIST_S3_BUCKET`, `OPENLIST_S3_ACCESS_KEY`, `OPENLIST_S3_SECRET_KEY`, `OPENLIST_DAV_ENDPOINT`, `OPENLIST_DAV_USERNAME`, and `OPENLIST_DAV_PASSWORD` through the environment. Credentials are not stored in the script.
 

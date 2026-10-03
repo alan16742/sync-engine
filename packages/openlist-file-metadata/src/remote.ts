@@ -2,6 +2,7 @@ import type { Binary, FileStat, Fs, ListReporter, Request, Stat } from '@hesprs/
 import type { Target } from './target';
 import type { FileTimes } from './times';
 import { readDavTimes, requestCreationDate } from './dav';
+import S3DirectoryListing from './directories';
 import { s3ListResponse, s3MultipartResponse, s3ObjectResponse, s3Times } from './s3';
 import { canonicalUrl, header, setHeaders } from './target';
 import { attachTimes, getTimes, withTimes } from './times';
@@ -10,6 +11,7 @@ import PassthroughFs from './wrapper';
 export class RemoteSession {
 	readonly uploading = new Map<string, FileTimes>();
 	readonly received = new Map<string, FileTimes>();
+	readonly directories = new S3DirectoryListing();
 	request?: Request;
 
 	constructor(
@@ -19,6 +21,7 @@ export class RemoteSession {
 	clear() {
 		this.uploading.clear();
 		this.received.clear();
+		this.directories.clear();
 	}
 }
 
@@ -58,14 +61,20 @@ export function remoteMiddleware(original: Request, session: RemoteSession): Req
 		let response = await original(url, { ...params, body, headers });
 		if (!session.enabled() || response.status < 200 || response.status >= 300) return response;
 		if (target.kind === 's3' && target.contains(url))
-			if (method === 'GET' && parsed.searchParams.get('list-type') === '2')
+			if (
+				method === 'GET' &&
+				parsed.searchParams.get('list-type') === '2' &&
+				parsed.searchParams.get('max-keys') !== '0'
+			) {
 				response = await s3ListResponse({
 					received: session.received,
 					request: original,
 					response,
 					target,
 				});
-			else if (method === 'POST' && parsed.searchParams.has('uploads'))
+				if (!parsed.searchParams.has('delimiter'))
+					response = await session.directories.restore(response, url, original, target);
+			} else if (method === 'POST' && parsed.searchParams.has('uploads'))
 				response = s3MultipartResponse(response);
 			else {
 				if (!parsed.search && (method === 'GET' || method === 'HEAD'))
@@ -106,6 +115,7 @@ export default class MetadataRemoteFs extends PassthroughFs {
 	}
 	async list(key: string, reporter: ListReporter) {
 		this.session.received.clear();
+		this.session.directories.clear();
 		return (await this.original.list(key, reporter)).map((stat) => this.decorate(stat));
 	}
 

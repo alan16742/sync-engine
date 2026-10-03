@@ -21,6 +21,7 @@ export default class OpenListFileMetadata {
 	constructor(
 		private readonly ctx: SelectFromContext<{
 			settings: BackendSettings;
+			memoryDB?: { getStore: (name: 'remoteContext20000') => { clear: () => void } };
 			on: On<Events>;
 			registerLocalRequestMiddleware: (entry: LocalRequestMiddlewareEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
@@ -36,6 +37,8 @@ export default class OpenListFileMetadata {
 
 	readonly start = () => {
 		this.active = true;
+		// Realtime fast mode must not reuse a list created before directory repair.
+		this.ctx.memoryDB?.getStore('remoteContext20000').clear();
 		this.cleanup.push(
 			this.ctx.registerLocalRequestMiddleware({
 				apply: (request) => {

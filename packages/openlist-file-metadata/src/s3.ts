@@ -46,9 +46,17 @@ export async function s3ListResponse(options: {
 		await Promise.all(
 			entries.slice(offset, offset + 8).map(async ([entry]) => {
 				const { Contents: object } = parseXML<{
-					Contents: { Key?: string; ETag?: unknown };
+					Contents: { Key?: string; ETag?: unknown; Size?: string };
 				}>(entry);
 				if (!object.Key || object.Key.endsWith('/')) return;
+				// OpenList uses this synthetic object for empty directories.
+				if (
+					object.Key.split('/').at(-1) === 'ThisIsAnEmptyFolderInTheS3Bucket' &&
+					object.Size === '0'
+				) {
+					replacements.set(entry, '');
+					return;
+				}
 				if (typeof object.ETag === 'string' && object.ETag.replaceAll('"', '').trim())
 					return;
 				const url = target.url(object.Key);

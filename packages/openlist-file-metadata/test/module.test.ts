@@ -14,6 +14,7 @@ import { attachTimes } from '../src/times';
 const { bytes, file, fs, request } = testKit;
 
 function harness() {
+	const cached = new Set(['incomplete-file-only-list']);
 	const localRequests = new Set<LocalRequestMiddlewareEntry>();
 	const remoteRequests = new Set<RemoteRequestMiddlewareEntry>();
 	const localWrappers = new Set<FsWrapperEntry>();
@@ -32,6 +33,13 @@ function harness() {
 		remoteFs: 's3',
 	};
 	const module = new OpenListFileMetadata({
+		memoryDB: {
+			getStore: () => ({
+				clear: () => {
+					cached.clear();
+				},
+			}),
+		},
 		on: (_key, listener) => register(events)(() => listener({ result: 'completed' } as never)),
 		registerLocalFsWrapper: register(localWrappers),
 		registerLocalRequestMiddleware: register(localRequests),
@@ -51,6 +59,7 @@ function harness() {
 		return result;
 	};
 	return {
+		cached,
 		events,
 		module,
 		registrations: [localRequests, remoteRequests, localWrappers, remoteWrappers],
@@ -62,6 +71,7 @@ function harness() {
 
 test('module uses transformed keys, preserves backend UID, and unloads all registrations', async () => {
 	const setup = harness();
+	expect(setup.cached.size).toBe(0);
 	const http = request(() => ({ headers: { etag: 'transient' } }));
 	const send = setup.wrapRequest(http.request);
 	const root = fs({

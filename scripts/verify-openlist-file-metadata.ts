@@ -4,9 +4,13 @@ import assert from 'node:assert/strict';
 import { appendFile, mkdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import type {
 	Binary,
+	BaseTask,
+	DeciderInput,
 	FileStat,
 	Fs,
+	RecordStatsMap,
 	Request,
+	Stat,
 	VaultRequest,
 } from '../packages/plugin/dist/index.spec';
 import MetadataLocalFs, {
@@ -55,6 +59,25 @@ const { sigv4Middleware } = (await import(
 			setMeta: (key: string, value: unknown) => void;
 		},
 	) => Request;
+};
+const { testKit } = (await import(
+	new URL('../packages/plugin/dist/dev.js', import.meta.url).href
+)) as {
+	testKit: {
+		runDecider: (
+			decider: (input: DeciderInput) => Array<BaseTask>,
+			input: {
+				localStats: Map<string, Stat>;
+				remoteStats: Map<string, Stat>;
+				records: RecordStatsMap;
+			},
+		) => Array<{ key: string; name: string }>;
+	};
+};
+const { default: decider } = (await import(
+	new URL('../packages/plugin/src/sync/decision/bidirectional.ts', import.meta.url).href
+)) as {
+	default: (input: DeciderInput, logger: (message: string) => void) => Array<BaseTask>;
 };
 
 const report: Array<object> = [];
@@ -185,10 +208,16 @@ for (const kind of ['s3', 'webdav'] as const) {
 		['笔记 #%.md', new TextEncoder().encode('OpenList file metadata\n')],
 		['empty.md', new Uint8Array(0)],
 		['large.bin', new Uint8Array(6 * 1024 * 1024 + 97).map((_, i) => i % 251)],
+		['nested/child/文件.md', new TextEncoder().encode('Nested directory verification\n')],
 	];
+	const folders = ['nested/', 'nested/child/', 'empty-directory/'];
 	const uploaded = new Map<string, string>();
 	await remote.fs.mkdir('/');
 	try {
+		for (const key of folders) {
+			await remote.fs.mkdir(key);
+			await source.fs.mkdir(key);
+		}
 		await Promise.all(
 			inputs.map(async ([key, value]) => {
 				await writeFile(`${localRoot}/${kind}-source/${key}`, value);
@@ -211,7 +240,37 @@ for (const kind of ['s3', 'webdav'] as const) {
 		// A fresh wrapper simulates another device with no upload-side metadata cache.
 		const fresh = createRemote();
 		const listed = await fresh.fs.list('/', () => 'advance');
-		assert.deepEqual(listed.map(({ key }) => key).sort(), inputs.map(([key]) => key).sort());
+		assert.deepEqual(
+			listed.map(({ key }) => key).sort(),
+			[...inputs.map(([key]) => key), ...folders].sort(),
+		);
+		const localStats = await Promise.all(
+			[...inputs.map(([key]) => key), ...folders].map((key) => source.fs.stat(key)),
+		);
+		const records: RecordStatsMap = new Map(
+			listed.map((item) => {
+				const local = localStats.find(({ key }) => key === item.key);
+				assert.ok(local);
+				if (item.isDir) return [item.key, { isDir: true }];
+				assert.ok(!local.isDir);
+				return [item.key, { isDir: false, local: local.uid, remote: item.uid }];
+			}),
+		);
+		assert.deepEqual(
+			testKit.runDecider((input) => decider(input, () => {}), {
+				localStats: new Map(localStats.map((item) => [item.key, item])),
+				records,
+				remoteStats: new Map(listed.map((item) => [item.key, item])),
+			}),
+			[],
+			'Second sync must not delete unchanged folders or files',
+		);
+		// Exercise a fresh full listing rather than relying on an earlier snapshot.
+		assert.deepEqual(
+			(await fresh.fs.list('/', () => 'advance')).map(({ key }) => key).sort(),
+			listed.map(({ key }) => key).sort(),
+		);
+		for (const key of folders) await destination.fs.mkdir(key);
 		await Promise.all(
 			inputs.map(async ([key, value]) => {
 				const info = listed.find(
@@ -261,6 +320,8 @@ for (const kind of ['s3', 'webdav'] as const) {
 		assert.ok(requests.some((entry) => entry.mtime !== undefined));
 	} finally {
 		for (const key of [...inputs.map(([name]) => name), 'renamed.md'])
+			await remote.raw.delete(prefix + key);
+		for (const key of [...folders].sort((a, b) => b.length - a.length))
 			await remote.raw.delete(prefix + key);
 		await remote.raw.delete(prefix);
 	}
