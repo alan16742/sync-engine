@@ -113,7 +113,7 @@ type OptimizerInput = {
 type OptimizerOutput = Array<OutputAtom>;
 type BatchOptimizer = (input: OptimizerInput) => OptimizerOutput;
 //#endregion
-//#region ../../node_modules/.bun/uni-kv@..+..+uni-kv.tgz/node_modules/uni-kv/dist/interface.d.ts
+//#region ../../node_modules/.bun/uni-kv@.+uni-kv.tgz/node_modules/uni-kv/dist/interface.d.ts
 //#region src/interface.d.ts
 type Database<D extends Record<string, unknown>, M extends Record<string, unknown>, F extends boolean> = {
   getStore<K extends keyof D>(name: K): Store<D[K], F>;
@@ -632,6 +632,7 @@ declare class Extensibility {
     failedToLoadModule: Snippet<string>;
     failedToDownloadModule: Snippet<string>;
     failedToFetchSource: Snippet<string>;
+    integrityCheckFailed: string;
   };
   readonly events: {
     moduleLoaded: string;

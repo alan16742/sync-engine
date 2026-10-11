@@ -222,19 +222,20 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 		expect(address.searchParams.has('delete')).toBe(true);
 		expect(params.headers?.['Content-Type']).toBe('application/xml');
 		expect(params.headers?.['Content-MD5']).toMatch(/^[A-Za-z0-9+/]{22}==$/u);
-		parsedResponse =
-			bodies.length === 0
-				? {
-						DeleteResult: {
-							Error: {
-								Code: 'AccessDenied',
-								Key: 'a<&"\'',
-								Message: 'no permission',
-							},
+		const body = textBody(params);
+		bodies.push(body);
+		const hasSpecialKey = body.includes('<Key>a&lt;&amp;&quot;&apos;</Key>');
+		parsedResponse = hasSpecialKey
+			? {
+					DeleteResult: {
+						Error: {
+							Code: 'AccessDenied',
+							Key: 'a<&"\'',
+							Message: 'no permission',
 						},
-					}
-				: {};
-		bodies.push(textBody(params));
+					},
+				}
+			: { DeleteResult: {} };
 		return response({
 			status: 200,
 			text: '<DeleteResult><Error><Key>a&lt;&amp;&quot;&apos;</Key><Code>AccessDenied</Code><Message>no permission</Message></Error></DeleteResult>',
@@ -244,9 +245,11 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 	for (let index = 0; index < 1000; index += 1) keys.push(`key-${index}`);
 	const result = await s3.fs.batchDelete(keys);
 	expect(bodies).toHaveLength(2);
-	expect(bodies[0]).toContain('<Key>a&lt;&amp;&quot;&apos;</Key>');
-	expect((bodies[0]?.match(/<Object>/gu) ?? []).length).toBe(1000);
-	expect((bodies[1]?.match(/<Object>/gu) ?? []).length).toBe(1);
+	const objectCount = (body: string) => (body.match(/<Object>/gu) ?? []).length;
+	const largeBatch = bodies.find((b) => objectCount(b) === 1000);
+	const smallBatch = bodies.find((b) => objectCount(b) === 1);
+	expect(largeBatch).toContain('<Key>a&lt;&amp;&quot;&apos;</Key>');
+	expect(smallBatch).toBeDefined();
 	expect(result['a<&"\'']?.message).toBe('S3 AccessDenied: no permission');
 	expect(result['key-0']).toBeUndefined();
 });
@@ -473,8 +476,8 @@ test('list maps unified root to an empty S3 prefix', async () => {
 	expect(await s3.fs.list('/', () => 'include' as const)).toStrictEqual([]);
 });
 
-test('list fetches meta via HEAD per object when fetchObjectMeta is enabled', async () => {
-	const s3 = createS3Fs({ fetchObjectMeta: true });
+test('list provides meta via lazy HEAD per object', async () => {
+	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		if (params.method === 'HEAD') return response({ headers: { 'x-amz-meta-ctime': '999' } });
 		parsedResponse = {
@@ -493,4 +496,40 @@ test('list fetches meta via HEAD per object when fetchObjectMeta is enabled', as
 	const [stat] = await s3.fs.list('/', () => 'include' as const);
 	if (stat.isDir) throw new Error('expected file stat');
 	expect(await stat.meta()).toStrictEqual({ ctime: '999' });
+});
+
+test('read populates meta cache so list stat meta() skips HEAD', async () => {
+	const s3 = createS3Fs();
+	let headCount = 0;
+	s3.setRequest((url, params) => {
+		if (params.method === 'GET') {
+			if (!url.includes('list-type'))
+				return response({
+					body: bytes('data'),
+					headers: { 'x-amz-meta-ctime': '42', 'x-amz-meta-mtime': '99' },
+				});
+			parsedResponse = {
+				ListBucketResult: {
+					Contents: {
+						ETag: 'etag-1',
+						Key: 'file.md',
+						LastModified: 'Mon, 01 Jan 2024 00:00:00 GMT',
+						Size: '1',
+					},
+					IsTruncated: 'false',
+				},
+			};
+			return response({ text: '<ListBucketResult />' });
+		}
+		if (params.method === 'HEAD') {
+			headCount++;
+			return response({ headers: { 'x-amz-meta-ctime': '999' } });
+		}
+		return response();
+	});
+	const [stat] = await s3.fs.list('/', () => 'include' as const);
+	if (stat.isDir) throw new Error('expected file stat');
+	await s3.fs.read('file.md');
+	expect(await stat.meta()).toStrictEqual({ ctime: '42', mtime: '99' });
+	expect(headCount).toBe(0);
 });
