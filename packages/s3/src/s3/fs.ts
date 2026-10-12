@@ -63,6 +63,20 @@ type S3Object = {
 const mtimeMissing = new Error('S3 did not return last modified time for objects!');
 const sizeMissing = new Error('S3 did not return size for objects!');
 
+function parseFileStats(key: string, lastModified?: string, contentLength?: string) {
+	if (!lastModified) throw mtimeMissing;
+	if (!contentLength) throw sizeMissing;
+	const mtime = new Date(lastModified).valueOf();
+	const size = Number(contentLength);
+	if (
+		!Number.isFinite(mtime) ||
+		!/^\d+$/u.test(contentLength.trim()) ||
+		!Number.isSafeInteger(size)
+	)
+		throw new Error(`Invalid S3 file stats: ${key}`);
+	return { mtime, size };
+}
+
 function buildDeleteObjectsXml(keys: Array<string>): string {
 	const objects = keys.map((key) => `<Object><Key>${escapeXml(key)}</Key></Object>`).join('');
 	return `<Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Quiet>true</Quiet>${objects}</Delete>`;
@@ -278,7 +292,7 @@ export default class S3Fs implements RootFs {
 		);
 	}
 
-	private async fetchMeta(key: string): Promise<Record<string, string>> {
+	async getMeta(key: string): Promise<Record<string, string>> {
 		const cached = this.metaCache.get(key);
 		if (cached) return cached;
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
@@ -286,15 +300,12 @@ export default class S3Fs implements RootFs {
 	}
 
 	async stat(key: string): Promise<Stat> {
-		if (isFolder(key)) return { isDir: true, key, meta: () => this.fetchMeta(key) };
+		if (isFolder(key)) return { isDir: true, key, meta: () => this.getMeta(key) };
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
 		const etag = getHeader(headers, 'etag');
 		const contentLength = getHeader(headers, 'content-length');
 		const lastModified = getHeader(headers, 'last-modified');
-		if (!lastModified) throw mtimeMissing;
-		if (!contentLength) throw sizeMissing;
-		const mtime = new Date(lastModified).valueOf();
-		const size = Number.parseInt(contentLength);
+		const { mtime, size } = parseFileStats(key, lastModified, contentLength);
 		return {
 			isDir: false,
 			key,
@@ -318,11 +329,13 @@ export default class S3Fs implements RootFs {
 
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
 		const results: Array<Stat> = [];
+		const tokens = new Set<string>();
+		const prefix = key === '/' ? '' : key;
 		let continuationToken: string | undefined;
 		do {
 			const query: Record<string, string> = {
 				'list-type': '2',
-				prefix: key === '/' ? '' : key,
+				prefix,
 			};
 			if (continuationToken) query['continuation-token'] = continuationToken;
 			const url = buildUrlWithQuery(
@@ -330,12 +343,16 @@ export default class S3Fs implements RootFs {
 				query,
 			);
 			const response = await this.requestOrThrow(url, { method: 'GET' });
-			const listing = rootValue<S3ListBucketResult>(response.text());
+			const listing =
+				rootValue<S3ListBucketResult>(response.text(), 'ListBucketResult') || {};
+			if (typeof listing !== 'object' || Array.isArray(listing))
+				throw new Error('Invalid S3 listing');
 			const contents = asArray(listing.Contents);
 			await Promise.all(
 				contents.map(async ({ Key, ETag, LastModified, Size }, index) => {
+					if (!Key) throw new Error('Missing S3 object key');
+					if (!Key.startsWith(prefix)) throw new Error(`Out-of-scope S3 object: ${Key}`);
 					if (
-						!Key ||
 						Key === key ||
 						(await reporter({
 							completed: index + 1,
@@ -344,13 +361,10 @@ export default class S3Fs implements RootFs {
 						})) === 'exclude'
 					)
 						return;
-					const meta = () => this.fetchMeta(Key);
+					const meta = () => this.getMeta(Key);
 					if (isFolder(Key)) results.push({ isDir: true, key: Key, meta });
 					else {
-						if (!LastModified) throw mtimeMissing;
-						if (!Size) throw sizeMissing;
-						const mtime = new Date(LastModified).valueOf();
-						const size = Number.parseInt(Size);
+						const { mtime, size } = parseFileStats(Key, LastModified, Size);
 						results.push({
 							isDir: false,
 							key: Key,
@@ -362,9 +376,16 @@ export default class S3Fs implements RootFs {
 					}
 				}),
 			);
-			if (listing.IsTruncated === 'true' && !listing.NextContinuationToken)
+			const flag = listing.IsTruncated?.trim() ?? 'false';
+			if (!['true', 'false', '1', '0'].includes(flag))
+				throw new Error('Invalid S3 listing pagination');
+			if (flag === 'false' || flag === '0') break;
+			const token = listing.NextContinuationToken;
+			if (!token?.trim())
 				throw new Error('S3 listing truncated but no continuation token provided');
-			continuationToken = listing.NextContinuationToken;
+			if (tokens.has(token)) throw new Error('Repeated S3 listing continuation token');
+			tokens.add(token);
+			continuationToken = token;
 		} while (continuationToken);
 
 		return results;
