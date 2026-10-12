@@ -20,6 +20,16 @@
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
+		"id": "s3-rclone",
+		"name": "S3 rclone",
+		"version": "0.0.1",
+		"description": "rclone S3 timestamp and directory compatibility.",
+		"icon": "server",
+		"main": "https://sync.consensia.cc/modules/s3-rclone.js",
+		"minPluginVersion": "3.3.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/s3-rclone"
+	},
+	{
 		"id": "gdrive",
 		"name": "Google Drive",
 		"version": "0.2.0",
