@@ -1,7 +1,7 @@
 import type { Stat } from '@hesprs/sync-engine-sdk';
 import { dirname } from '@repo/shared/path';
 
-export function nonEmptyFolders(stats: Array<Stat>): Set<string> {
+export default function nonEmptyFolders(stats: Array<Stat>): Set<string> {
 	const folders = new Set<string>();
 	for (const stat of stats) {
 		if (stat.isDir) continue;
@@ -11,9 +11,4 @@ export function nonEmptyFolders(stats: Array<Stat>): Set<string> {
 		}
 	}
 	return folders;
-}
-
-export function omitEmptyFolders(stats: Array<Stat>): Array<Stat> {
-	const folders = nonEmptyFolders(stats);
-	return stats.filter((stat) => !stat.isDir || folders.has(stat.key));
 }

@@ -2,11 +2,8 @@ import type { Stat } from '@hesprs/sync-engine-sdk';
 import parseXML from '@repo/shared/parse-xml';
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-export function rootValue<T extends object>(xml: string, expectedRoot?: string): T {
-	const roots = parseXML<Record<string, T>>(xml);
-	if (expectedRoot && !Object.hasOwn(roots, expectedRoot))
-		throw new Error(`Invalid S3 XML root: expected ${expectedRoot}`);
-	return Object.values(roots)[0];
+export function rootValue<T extends object>(xml: string): T {
+	return Object.values(parseXML<Record<string, T>>(xml))[0];
 }
 
 type S3ErrorResponse = {

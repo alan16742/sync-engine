@@ -2,7 +2,6 @@ import syncEngineModule from '@hesprs/sync-engine-sdk/tsdown-plugin';
 import moduleCatalog from '@repo/shared/module-catalog';
 import { defineConfig } from 'tsdown';
 
-const dev = process.env.MODE === 'dev';
 const clientId = process.env.GDRIVE_CLIENT_ID;
 const clientSecret = process.env.GDRIVE_CLIENT_SECRET;
 
@@ -10,7 +9,7 @@ if (!clientId || !clientSecret)
 	throw new Error('GDRIVE_CLIENT_ID and GDRIVE_CLIENT_SECRET must be set to compile GDrive.');
 
 export default defineConfig({
-	clean: !dev,
+	clean: process.env.MODE !== 'dev',
 	css: { minify: true },
 	define: {
 		'process.env.CLIENT_ID': JSON.stringify(btoa(clientId)),
