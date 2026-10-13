@@ -77,6 +77,15 @@ export default class RcloneFs implements WrappedFs {
 		for (const folder of nonEmptyFolders(stats)) {
 			if (folder === key || entries.has(folder)) continue;
 			if (key !== '/' && !folder.startsWith(key)) continue;
+			// Report inferred folders so downstream organizers keep them instead of dropping silently.
+			if (
+				(await reporter({
+					completed: stats.length,
+					current: folder,
+					total: stats.length,
+				})) === 'exclude'
+			)
+				continue;
 			entries.set(folder, { isDir: true, key: folder, meta: () => ({}) });
 		}
 		return [...entries.values()];

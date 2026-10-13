@@ -108,31 +108,31 @@ test('stat leaves folders unchanged', async () => {
 	expect(await fs.stat('dir/')).toEqual(folder('dir/'));
 });
 
-test('list infers parent folders and converts timestamps', async () => {
+test('list infers folders, converts timestamps, and reports through the reporter', async () => {
 	const backend = listing([
 		file('vault/notes/nested/note.md', { meta: () => ({ mtime: SECONDS }) }),
 	]);
 	const fs = adapter(backend.fs);
-	const stats = await fs.list('vault/notes/', () => 'advance');
+	const reported: Array<string> = [];
+	const stats = await fs.list('vault/notes/', (progress) => {
+		reported.push(progress.current);
+		return 'include';
+	});
 	expect(stats.map((s) => s.key)).toEqual(['vault/notes/nested/note.md', 'vault/notes/nested/']);
+	expect(reported).toEqual(['vault/notes/nested/note.md', 'vault/notes/nested/']);
 	expect(await stats[0].meta()).toEqual({ mtime: String(MS) });
 });
 
-test('list skips the listed folder itself', async () => {
-	const backend = listing([file('vault/notes/note.md', { meta: () => ({ mtime: SECONDS }) })]);
-	const fs = adapter(backend.fs);
-	const stats = await fs.list('vault/notes/', () => 'advance');
-	expect(stats.map((s) => s.key)).toEqual(['vault/notes/note.md']);
-});
-
-test('list does not duplicate existing folder entries', async () => {
+test('list excludes reporter-rejected folders and does not duplicate existing entries', async () => {
 	const backend = listing([
 		folder('notes/nested/'),
 		file('notes/nested/note.md', { meta: () => ({ mtime: SECONDS }) }),
 	]);
 	const fs = adapter(backend.fs);
-	const stats = await fs.list('/', () => 'advance');
-	expect(stats.filter((s) => s.key === 'notes/nested/')).toHaveLength(1);
+	const stats = await fs.list('/', (progress) =>
+		progress.current === 'notes/' ? 'exclude' : 'include',
+	);
+	expect(stats.map((s) => s.key)).toEqual(['notes/nested/', 'notes/nested/note.md']);
 });
 
 test('mkdir is a no-op', async () => {
