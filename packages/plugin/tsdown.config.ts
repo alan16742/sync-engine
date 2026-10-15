@@ -4,7 +4,6 @@ import { defineConfig } from 'tsdown';
 import solid from 'unplugin-solid/rolldown';
 import man from '../../manifest.json' with { type: 'json' };
 
-const dev = process.env.MODE === 'dev';
 const buildingPlugin = process.env.BUILD === 'plugin';
 const dtsPass = process.env.PASS === 'dts';
 
@@ -16,7 +15,7 @@ const sharedConfig = defineConfig({
 
 const pluginConfig = defineConfig({
 	...sharedConfig,
-	clean: !dev,
+	clean: process.env.MODE !== 'dev',
 	copy: [{ from: '../../manifest.json', to: '../../dist' }],
 	css: {
 		fileName: 'styles.css',

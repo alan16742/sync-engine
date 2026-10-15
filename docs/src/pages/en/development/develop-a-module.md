@@ -48,10 +48,8 @@ Create `tsdown.config.ts` and write following content:
 import syncEngineModule from '@hesprs/sync-engine-sdk/tsdown-plugin';
 import { defineConfig } from 'tsdown';
 
-const dev = process.env.MODE === 'dev';
-
 export default defineConfig({
-	clean: !dev,
+	clean: process.env.MODE !== 'dev',
 	dts: false,
 	entry: { 'your-module-id': 'src/index.ts' },
 	minify: true,
@@ -183,10 +181,7 @@ ln -s /path/to/your/vault/.obsidian/plugins/sync-engine/modules /path/to/your/pr
 Remember we have the following in Tsdown config and `package.json`:
 
 ```TypeScript
-const dev = process.env.MODE === 'dev';
-export default defineConfig({
-	clean: !dev,
-});
+export default defineConfig({ clean: process.env.MODE !== 'dev' });
 ```
 
 ```json

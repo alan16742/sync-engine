@@ -2,10 +2,8 @@ import syncEngineModule from '@hesprs/sync-engine-sdk/tsdown-plugin';
 import moduleCatalog from '@repo/shared/module-catalog';
 import { defineConfig } from 'tsdown';
 
-const dev = process.env.MODE === 'dev';
-
 export default defineConfig({
-	clean: !dev,
+	clean: process.env.MODE !== 'dev',
 	dts: false,
 	entry: { webdav: 'src/index.ts' },
 	minify: true,
