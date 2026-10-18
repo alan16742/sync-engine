@@ -28,7 +28,7 @@ import {
 } from '@/sync';
 import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
-import type { Translate } from './I18n';
+import type { Snippet, Translate } from './I18n';
 import type { DeleteConfirmReturn } from './ProgressModal';
 import type { DecideTasksInput, Infras } from './Registrar';
 
@@ -75,6 +75,7 @@ export default class Sync {
 		executionStarted: Array<BaseTask>;
 	};
 	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
+	declare readonly i18n: { xOperationsFailed: Snippet<number> };
 
 	private readonly postProcess = (
 		stats: Array<Stat>,
@@ -172,16 +173,21 @@ export default class Sync {
 			const { reporter: localReporter, organizer: localOrganizer } = prepareList(match);
 			const { reporter: remoteReporter, organizer: remoteOrganizer } = prepareList(match);
 			dispatch('syncInitialized', { ...infras, match });
-			const [localList, remoteList, recordList] = await Promise.all([
-				localFs.list('/', localReporter),
-				remoteLister({
+
+			// oxlint-disable-next-line sort-keys : getting records must be after remote listing, since remote listing may modify records
+			const listRemoteAndGetRecord = async () => ({
+				remoteList: await remoteLister({
 					...infras,
 					reporter: (prog) => {
 						dispatch('remoteWalkProgress', prog);
 						return remoteReporter(prog);
 					},
 				}),
-				recordStore.entries(),
+				recordList: await recordStore.entries(),
+			});
+			const [localList, { recordList, remoteList }] = await Promise.all([
+				localFs.list('/', localReporter),
+				listRemoteAndGetRecord(),
 			]);
 			if (isCancelled()) throw syncCancelledError;
 			const record = organizeRecord(recordList, match);
@@ -253,7 +259,7 @@ export default class Sync {
 				? { result: 'cancelled' }
 				: failedCount
 					? {
-							error: new Error(`Execution of ${failedCount} sync task(s) failed.`),
+							error: new Error(translate('xOperationsFailed', failedCount)),
 							result: 'failed',
 						}
 					: { result: 'completed' };
