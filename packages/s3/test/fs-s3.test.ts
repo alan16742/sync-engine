@@ -61,9 +61,11 @@ test('read gets encoded object bytes and maps S3 XML errors', async () => {
 	s3.setRequest((url, params) => {
 		assertSignedRequest(params, 'GET');
 		expect(url).toBe('https://s3.example.com/vault/Notes/file%20A.md');
-		return response({ body: bytes('content') });
+		return response({ body: bytes('content'), headers: { ETag: '"read-etag"' } });
 	});
 	expect(await s3.fs.read('Notes/file A.md')).toStrictEqual(bytes('content'));
+	const snapshot = file('Notes/file A.md', { uid: '0~0' });
+	expect(await s3.fs.read(snapshot.key, snapshot)).toStrictEqual(bytes('content'));
 
 	const errorFs = createS3Fs();
 	errorFs.setRequest(() =>
@@ -476,11 +478,10 @@ test('list maps unified root to an empty S3 prefix', async () => {
 	expect(await s3.fs.list('/', () => 'include' as const)).toStrictEqual([]);
 });
 
-test('list includes an exact file prefix match and provides meta via lazy HEAD', async () => {
+test('list provides meta via lazy HEAD per object', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		if (params.method === 'HEAD') return response({ headers: { 'x-amz-meta-ctime': '999' } });
-		expect(new URL(url).searchParams.get('prefix')).toBe('file.md');
 		parsedResponse = {
 			ListBucketResult: {
 				Contents: {
@@ -494,7 +495,7 @@ test('list includes an exact file prefix match and provides meta via lazy HEAD',
 		};
 		return response({ text: '<ListBucketResult />' });
 	});
-	const [stat] = await s3.fs.list('file.md', () => 'include' as const);
+	const [stat] = await s3.fs.list('/', () => 'include' as const);
 	if (stat.isDir) throw new Error('expected file stat');
 	expect(await stat.meta()).toStrictEqual({ ctime: '999' });
 });
