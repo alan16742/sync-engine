@@ -500,7 +500,7 @@ declare class Sync {
     on: On<Events>;
     translate: Translate<Translations>;
     getConflictResolver: () => ConflictResolver;
-    decideTasks: (input: DecideTasksInput) => Array<BaseTask>;
+    decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<BaseTask>;
   });
   readonly events: {
     syncStarted: {
@@ -535,6 +535,11 @@ declare class Sync {
     executeSync: (trigger: string, options?: SyncOptions) => Promise<SyncTerminateReason>;
   };
 }
+type StrategyMapping = Record<string, {
+  localStats: StatsMap;
+  remoteStats: StatsMap;
+  records: RecordStatsMap;
+}>;
 //#endregion
 //#region src/modules/Observability.d.ts
 type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
@@ -918,7 +923,6 @@ type HeadSettingTranslations = {
   }>;
   addStrategy: string;
   noStrategyConfigured: string;
-  dontSync: string;
 };
 declare function addLabel(element: Element, { text, tooltip, color, textColor }: LabelDefinition): HTMLSpanElement;
 //#endregion
@@ -1035,6 +1039,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
+    dontSync: string;
   } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
@@ -1207,7 +1212,7 @@ type RemoteFsEntry = {
 };
 type DeciderEntry = {
   decider: Decider;
-  prettyName: () => string;
+  prettyName?: () => string;
 };
 type ConflictResolverEntry = {
   prettyName: () => string;
@@ -1241,12 +1246,6 @@ type RequestResponse = {
   status: number;
 };
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
-type DecideTasksInput = {
-  local: Record<string, StatsMap>;
-  remote: Record<string, StatsMap>;
-  record: Record<string, RecordStatsMap>;
-  taskFactory: TaskFactory;
-};
 declare class Registrar {
   private readonly ctx;
   private readonly cleanupCallbacks;
@@ -1292,7 +1291,7 @@ declare class Registrar {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
     createRemoteFs: (remoteFs?: string) => Fs | Error;
-    decideTasks: ({ local, record, remote, taskFactory }: DecideTasksInput) => BaseTask<TaskOptions>[];
+    decideTasks: (mapping: StrategyMapping, taskFactory: TaskFactory) => BaseTask<TaskOptions>[];
     deciderRegistry: Map<string, DeciderEntry>;
     getCheckConnection: (remoteFs?: string) => () => MaybePromise<void | Error>;
     getConflictResolver: () => ConflictResolver;

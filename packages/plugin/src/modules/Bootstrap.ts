@@ -34,7 +34,9 @@ import {
 	keepRemoteResolver,
 	latestSurviveResolver,
 	renameAndKeepBothResolver,
+	pholderDecider,
 } from '@/sync';
+import { NONE_STRATEGY } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
 import type { ObsidianLanguageCode, Translate, TranslationResource } from './I18n';
 import type {
@@ -85,6 +87,7 @@ export default class Bootstrap {
 		keepRemote: string;
 		renameAndKeepBoth: string;
 		skip: string;
+		dontSync: string;
 	} & ControlsSettingTranslations &
 		DevelopmentSettingTranslations &
 		FeaturesSettingTranslations &
@@ -365,6 +368,11 @@ export default class Bootstrap {
 		registerDecider('mirrorRemote', {
 			decider: (input) => mirrorRemoteDecider(input, logger),
 			prettyName: () => t('mirrorRemote'),
+		});
+		registerDecider(NONE_STRATEGY, {
+			// The only case for "none" strategy is pholder
+			decider: (input) => pholderDecider(input, logger),
+			prettyName: () => t('dontSync'),
 		});
 
 		registerConflictResolver('renameAndKeepBoth', {

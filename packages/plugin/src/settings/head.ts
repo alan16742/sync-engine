@@ -35,7 +35,6 @@ export type HeadSettingTranslations = {
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
 	addStrategy: string;
 	noStrategyConfigured: string;
-	dontSync: string;
 };
 
 type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
@@ -156,8 +155,13 @@ export default function headSettings(
 				type: 'page',
 			}),
 			{
-				1000: s(() =>
-					generateEditableList<GlobStrategy>({
+				1000: s(() => {
+					const options: Record<string, string> = {};
+					deciderRegistry.forEach(({ prettyName }, key) => {
+						const name = prettyName?.();
+						if (name) options[key] = name;
+					});
+					return generateEditableList<GlobStrategy>({
 						defaultValue: { expr: '', strategy: 'bidirectional' },
 						identifier: 'syncStrategy',
 						items: settings.syncStrategy,
@@ -189,22 +193,15 @@ export default function headSettings(
 									});
 									if (item.new) text.inputEl.focus();
 								})
-								.addDropdown((dropdown) =>
+								.addDropdown((dropdown) => {
 									dropdown
-										.addOptions({
-											...Object.fromEntries(
-												[...deciderRegistry].map(
-													([key, { prettyName }]) => [key, prettyName()],
-												),
-											),
-											none: translate('dontSync'),
-										})
+										.addOptions(options)
 										.setValue(item.value.strategy)
 										.onChange((value) => {
 											item.value.strategy = value;
 											save();
-										}),
-								);
+										});
+								});
 						},
 						reorder: true,
 						rerenderSettingTab,
@@ -213,8 +210,8 @@ export default function headSettings(
 							add: translate('addStrategy'),
 							empty: translate('noStrategyConfigured'),
 						},
-					}),
-				),
+					});
+				}),
 			},
 		),
 		60: s(() => ({
