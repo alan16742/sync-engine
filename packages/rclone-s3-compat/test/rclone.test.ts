@@ -10,8 +10,8 @@ const SECONDS = '1700000123.456';
 const CTIME = '1600000123456';
 const ENCRYPTED = 'dGVzdC1lbmNyeXB0ZWQtbXRpbWU=';
 
-function adapter(original: Fs, needDirFix = true) {
-	return new RcloneFs(original, needDirFix);
+function adapter(original: Fs) {
+	return new RcloneFs(original);
 }
 
 function listing(stats: Array<Stat>, uid = 's3~test') {
@@ -133,72 +133,26 @@ test('stat leaves folders unchanged', async () => {
 	expect(await fs.stat('dir/')).toEqual(folder('dir/'));
 });
 
-test('list infers folders, converts timestamps, and reports through the reporter', async () => {
-	const backend = listing([
-		file('vault/notes/nested/note.md', { meta: () => ({ mtime: SECONDS }), mtime: MS }),
-	]);
-	const fs = adapter(backend.fs);
-	const reported: Array<string> = [];
-	const stats = await fs.list('vault/notes/', (progress) => {
-		reported.push(progress.current);
-		return 'include';
-	});
-	expect(stats.map((s) => s.key)).toEqual(['vault/notes/nested/note.md', 'vault/notes/nested/']);
-	expect(reported).toEqual(['vault/notes/nested/note.md', 'vault/notes/nested/']);
-	expect(await stats[0].meta()).toEqual({ mtime: String(MS) });
+test('list keeps the millisecond timestamp exposed by S3', async () => {
+	const source = file('note.md', { meta: () => ({ mtime: SECONDS }), mtime: MS });
+	const fs = adapter(listing([source]).fs);
+	const [stat] = await fs.list('/', () => 'include');
+	expect(await stat.meta()).toEqual({ mtime: String(MS) });
 });
 
-test('list excludes reporter-rejected folders and does not duplicate existing entries', async () => {
-	const backend = listing([
-		folder('notes/nested/'),
-		file('notes/nested/note.md', { meta: () => ({ mtime: SECONDS }) }),
-	]);
-	const fs = adapter(backend.fs);
-	const stats = await fs.list('/', (progress) =>
-		progress.current === 'notes/' ? 'exclude' : 'include',
-	);
-	expect(stats.map((s) => s.key)).toEqual(['notes/nested/', 'notes/nested/note.md']);
-});
-
-test('mkdir is a no-op', async () => {
+test('mkdir and move pass through unchanged', async () => {
 	const backend = testFs();
 	const fs = adapter(backend.fs);
-	await fs.mkdir('empty/nested/', folder('empty/nested/'), true);
-	await fs.mkdir('/', folder('/'), true);
-	expect(backend.calls.mkdir).toEqual([]);
-});
-
-test('move skips folder keys but forwards file moves', async () => {
-	const backend = testFs();
-	const fs = adapter(backend.fs);
-	await fs.move('old/', 'new/');
-	await fs.move('old/note.md', 'new/note.md');
-	expect(backend.calls.move).toEqual([['old/note.md', 'new/note.md']]);
-});
-
-test('with needDirFix=false, mkdir forwards and list skips inference', async () => {
-	const backend = testFs({
-		control: {
-			list: () => [file('notes/note.md', { meta: () => ({ mtime: SECONDS }) })],
-		},
-	});
-	const fs = adapter(backend.fs, false);
-	await fs.mkdir('notes/', folder('notes/'));
-	expect(backend.calls.mkdir).toHaveLength(1);
-	const stats = await fs.list('/', () => 'advance');
-	expect(stats.map((s) => s.key)).toEqual(['notes/note.md']);
-});
-
-test('with needDirFix=false, move forwards folder keys', async () => {
-	const backend = testFs();
-	const fs = adapter(backend.fs, false);
-	await fs.move('old/', 'new/');
-	expect(backend.calls.move).toEqual([['old/', 'new/']]);
+	const dir = folder('empty/');
+	await fs.mkdir(dir.key, dir, true);
+	await fs.move('empty/', 'moved/');
+	expect(backend.calls.mkdir).toEqual([[dir.key, dir, true]]);
+	expect(backend.calls.move).toEqual([['empty/', 'moved/']]);
 });
 
 test('module registers wrapper only for s3 and cleans up', () => {
 	const wrappers: Array<FsWrapperEntry> = [];
-	const settings = { asymmetricStorage: false, remoteFs: 's3' };
+	const settings = { remoteFs: 's3' };
 	const module = new S3Rclone({
 		registerRemoteFsWrapper: (entry) => {
 			wrappers.push(entry);

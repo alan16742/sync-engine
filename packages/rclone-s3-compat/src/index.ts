@@ -9,7 +9,6 @@ export default class S3Rclone {
 		private readonly ctx: SelectFromContext<{
 			settings: {
 				remoteFs: string;
-				asymmetricStorage: boolean;
 			};
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 		}>,
@@ -22,7 +21,7 @@ export default class S3Rclone {
 					if (this.ctx.settings.remoteFs !== 's3') return;
 					const backend = digOriginal(fs);
 					if (!backend.getUid().startsWith('s3~')) return;
-					return new RcloneFs(fs, !this.ctx.settings.asymmetricStorage);
+					return new RcloneFs(fs);
 				},
 				priority: 500,
 			}),

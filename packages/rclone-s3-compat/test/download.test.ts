@@ -56,7 +56,6 @@ for (const streaming of [false, true])
 					request: remote.request,
 					urlStyle: 'path',
 				}),
-				false,
 			);
 			const local = testKit.fs({
 				control: {
