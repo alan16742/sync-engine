@@ -4,13 +4,9 @@ The S3 rclone module preserves file modification times when Sync Engine uses the
 
 ## Modification Time
 
-Sync Engine stores `mtime` in milliseconds, while rclone interprets `x-amz-meta-mtime` as Unix seconds. The module converts the value at the file-system boundary: uploads convert milliseconds to seconds (for example, `1700000123456` to `1700000123.456`), and reads convert numeric seconds back to milliseconds.
+Sync Engine stores `mtime` in milliseconds, while rclone interprets `x-amz-meta-mtime` as Unix seconds. The module converts the value at the file-system boundary, in both directions: uploads convert milliseconds to seconds (for example, `1700000123456` to `1700000123.456`), and listings convert seconds back to milliseconds.
 
-When upload metadata has no `mtime`, the module uses the file stat's `mtime`. For listed files, it uses the timestamp from the S3 listing when metadata is absent or numeric, preserving the listing's available precision. Non-numeric values pass through unchanged, so encrypted metadata remains intact.
-
-## Directory Behavior
-
-Directory listing and marker compatibility are outside this module. It does not infer missing parents or alter `mkdir()` and `move()`; those operations pass through to S3 unchanged. `list()` only adapts file modification times, so directory support depends on the configured rclone server and backend.
+Conversion applies only to present, numeric values: non-numeric values pass through unchanged, so encrypted metadata remains intact, and missing `mtime` metadata stays missing on upload. On read, a missing `mtime` is refilled from the listing's own time — `rclone serve s3` keeps object metadata in memory only, so it disappears on server restarts, while the disk modification time it set at upload survives.
 
 ## Encryption
 
@@ -20,4 +16,4 @@ When [encryption](./encryption) is enabled, its wrapper (priority 7919) encrypts
 
 The module registers a remote file-system wrapper at priority `500`, between the S3 file system and the [memory control wrapper](../file-system-wrappers#memory-control-wrapper). It applies only when S3 is selected and the underlying file-system UID starts with `s3~`.
 
-The wrapper adapts `write()`, `writeStream()`, `stat()`, and `list()` for modification time. Other operations pass through unchanged.
+The wrapper adapts `write()`, `writeStream()`, and `list()` for modification time.

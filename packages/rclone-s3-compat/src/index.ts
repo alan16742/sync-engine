@@ -1,15 +1,13 @@
-import type { FsWrapperEntry, SelectFromContext } from '@hesprs/sync-engine-sdk';
-import { digOriginal } from '@hesprs/sync-engine-sdk';
 import RcloneFs from '@/remote';
+import { digOriginal } from '@hesprs/sync-engine-sdk';
+import type { FsWrapperEntry, SelectFromContext } from '@hesprs/sync-engine-sdk';
 
-export default class S3Rclone {
+export default class RcloneS3Compat {
 	private readonly cleanup: Array<() => void> = [];
 
 	constructor(
 		private readonly ctx: SelectFromContext<{
-			settings: {
-				remoteFs: string;
-			};
+			settings: { remoteFs: string };
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 		}>,
 	) {}
