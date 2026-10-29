@@ -7,10 +7,7 @@ Sync Engine's sync pipeline is extensible at three points: sync trigger options,
 Every sync run is launched with a trigger name and a set of options. A `TriggerEntry` is registered under a trigger name and supplies the options factory; when the scheduler flushes a batch of sync requests, it selects the entry with the highest priority among the batch's trigger names and passes its `options()` to the run.
 
 ```ts
-type TriggerEntry = {
-  priority: number;
-  options?: () => SyncOptions;
-};
+type TriggerEntry = { priority: number; options?: () => SyncOptions };
 ```
 
 ```ts
@@ -60,10 +57,10 @@ type DeciderInput = {
   taskFactory: TaskFactory;
 };
 
-type Decider = (input: DeciderInput) => Array<BaseTask>;
+type Decider = (input: DeciderInput) => Array<Task>;
 ```
 
-Stats are bucketed by strategy name before planning; `decideTasks` invokes the registered decider once per bucket that has entries. Each registered decider ID becomes a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. Use `taskFactory` instead of constructing task classes directly — their constructors require internal sync infrastructure. Built-in deciders include `bidirectional`, `mirrorLocal`, and `mirrorRemote`; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
+Stats are bucketed by strategy name before planning; `decideTasks` invokes the registered decider once per bucket that has entries. Each registered decider ID that supplies a `prettyName` becomes a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. Use `taskFactory` instead of constructing task classes directly since their constructors require internal sync infrastructure. Built-in deciders include `bidirectional`, `mirrorLocal`, and `mirrorRemote`; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
 
 Examples: [bidirectional decider](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/bidirectional.ts) and [mirror deciders](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/mirror.ts).
 
@@ -168,19 +165,19 @@ type TaskFactory = <N extends TaskNames>(
 ) => InstanceType<(typeof taskMap)[N]>;
 ```
 
-| Type              | Required options beyond `key`                                       | Operation                                                                                         |
-| ----------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `AddRecord`       | `local: Stat`, `remote: Stat`                                       | Creates record for both sides. File records contain both UIDs; directory records contain `isDir`. |
-| `RemoveRecord`    | None                                                                | Deletes sync record without changing either filesystem.                                           |
-| `Download`        | `remote: FileStat`                                                  | Copies remote file to local filesystem and records both UIDs.                                     |
-| `Upload`          | `local: FileStat`                                                   | Copies local file to remote filesystem and records both UIDs.                                     |
-| `CreateLocalDir`  | `remote: FolderStat`                                                | Creates local directory and its sync record.                                                      |
-| `CreateRemoteDir` | `local: FolderStat`                                                 | Creates remote directory and its sync record.                                                     |
-| `RemoveLocal`     | `local: Stat`                                                       | Deletes local path and its sync record.                                                           |
-| `RemoveRemote`    | `remote: Stat`                                                      | Deletes remote path and its sync record.                                                          |
-| `MoveLocal`       | `oldKey: string`, `remote: Stat`                                    | Moves local path from `oldKey` to `key` and moves its record.                                     |
-| `MoveRemote`      | `oldKey: string`, `local: Stat`                                     | Moves remote path from `oldKey` to `key` and moves its record.                                    |
-| `ResolveConflict` | `local: FileStat`, `remote: FileStat`, `resolver: ConflictResolver` | Invokes resolver with both file states and sync infrastructure.                                   |
+| Type | Required options beyond `key` | Operation |
+| --- | --- | --- |
+| `AddRecord` | `local: Stat`, `remote: Stat` | Creates record for both sides. File records contain both UIDs; directory records contain `isDir`. |
+| `RemoveRecord` | None | Deletes sync record without changing either filesystem. |
+| `Download` | `remote: FileStat` | Copies remote file to local filesystem and records both UIDs. |
+| `Upload` | `local: FileStat` | Copies local file to remote filesystem and records both UIDs. |
+| `CreateLocalDir` | `remote: FolderStat` | Creates local directory and its sync record. |
+| `CreateRemoteDir` | `local: FolderStat` | Creates remote directory and its sync record. |
+| `RemoveLocal` | `local: Stat` | Deletes local path and its sync record. |
+| `RemoveRemote` | `remote: Stat` | Deletes remote path and its sync record. |
+| `MoveLocal` | `newKey: string` | Moves local path from `key` to `newKey` and moves its record. |
+| `MoveRemote` | `newKey: string` | Moves remote path from `key` to `newKey` and moves its record. |
+| `ResolveConflict` | `local: FileStat`, `remote: FileStat`, `resolver: ConflictResolver` | Invokes resolver with both file states and sync infrastructure. |
 
 ## `SyncTerminateReason`
 

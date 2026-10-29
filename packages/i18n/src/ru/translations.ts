@@ -16,6 +16,7 @@ const p = (count: number, one: string, few: string, many: string) => {
 };
 const pc = (count: number, one: string, few: string, many: string) =>
 	`${count} ${p(count, one, few, many)}`;
+const pcOperationAccusative = (count: number) => pc(count, 'операцию', 'операции', 'операций');
 
 const ru: Translations = {
 	addHeader: 'Добавить заголовок',
@@ -28,9 +29,7 @@ const ru: Translations = {
 		createFragment((frag) => {
 			frag.appendText('Используйте ');
 			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-				},
+				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
 				text: 'асимметричное хранилище',
 			});
 			frag.appendText(', чтобы существенно ускорить синхронизацию.');
@@ -152,7 +151,7 @@ const ru: Translations = {
 	exportLogsToFile: 'Экспортировать логи в файл',
 	failed: 'Ошибка',
 	failedTasksDescription: (count) =>
-		`Во время синхронизации не удалось выполнить ${pc(count, 'операцию', 'операции', 'операций')}:`,
+		`Во время синхронизации не удалось выполнить ${pcOperationAccusative(count)}:`,
 	failedToDownloadModule: (name) => `Не удалось скачать модуль «${name}»`,
 	failedToFetchSource: (url) => `Не удалось получить источник из «${url}»`,
 	failedToLoadModule: (name) => `Не удалось загрузить модуль «${name}»`,
@@ -175,6 +174,7 @@ const ru: Translations = {
 		}),
 	iconPlaceholder: 'Введите код иконки (например, puzzle)',
 	idle: 'В ожидании',
+	installModuleFromCode: 'Установить модуль из кода',
 	installModuleFromFile: 'Установить модуль из файла',
 	installed: 'Установлено',
 	integrityCheckFailed:
@@ -183,9 +183,7 @@ const ru: Translations = {
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {
 			frag.appendText('Проверять хеш при каждой загрузке модуля, ');
-			frag.createEl('strong', {
-				text: 'защищая вас от атак с подменой модулей',
-			});
+			frag.createEl('strong', { text: 'защищая вас от атак с подменой модулей' });
 			frag.appendText('.');
 		}),
 	keepLocal: 'Оставить локальную версию',
@@ -383,8 +381,11 @@ const ru: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
 	walkingRemote: 'Сканирование удалённых файлов',
+	writeCode: 'Написать код',
+	writeCodeDescription: 'Напишите код своего модуля здесь на JavaScript',
 	xConfigured: (count) => `Настроено: ${count}`,
 	xEnabled: (count) => `Включено модулей: ${count}`,
+	xOperationsFailed: (count) => `Не удалось выполнить ${pcOperationAccusative(count)}`,
 	xSelected: (count) => `(выбрано: ${count})`,
 };
 

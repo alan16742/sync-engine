@@ -1,14 +1,3 @@
-import type {
-	DatabaseSync,
-	Fs,
-	WrappedFs,
-	Stat,
-	Binary,
-	FileStat,
-	ListReporter,
-	FolderStat,
-} from '@hesprs/sync-engine-sdk';
-import type { EncryptionStores } from './path';
 import {
 	decryptFileContent,
 	deriveMasterKey,
@@ -23,28 +12,31 @@ import { decryptPathSegments, encryptPathSegments } from './path';
 import createDecryptedReadableStream from './read-stream';
 import { getEncryptedFileSize } from './shared';
 import createEncryptedReadableStream from './write-stream';
+import { parseUrl } from '@repo/shared/path';
+import type { EncryptionStores } from './path';
+import type {
+	DatabaseSync,
+	Fs,
+	WrappedFs,
+	Stat,
+	Binary,
+	FileStat,
+	ListReporter,
+	FolderStat,
+} from '@hesprs/sync-engine-sdk';
 
-export type DerivedKeys = {
-	nameKey: Binary;
-	rootFileKey: Binary;
-	metaKey: Binary;
-};
+export type DerivedKeys = { nameKey: Binary; rootFileKey: Binary; metaKey: Binary };
 
-export type EncryptionDBSchema = {
-	decryptedToEncrypted: string;
-	encryptedToDecrypted: string;
-};
+export type EncryptionDBSchema = { decryptedToEncrypted: string; encryptedToDecrypted: string };
 
-export type EncryptionDBMeta = {
-	encryptionKeys?: DerivedKeys;
-	encryptionMarker?: string;
-};
+export type EncryptionDBMeta = { encryptionKeys?: DerivedKeys; encryptionMarker?: string };
 
 export type EncryptionDB = DatabaseSync<EncryptionDBSchema, EncryptionDBMeta>;
 
 export type EncryptionWrapperOptions = {
 	memoryDB: EncryptionDB;
 	password: string;
+	legacyEndpoint?: string;
 };
 
 class EncryptionFs implements WrappedFs {
@@ -56,7 +48,7 @@ class EncryptionFs implements WrappedFs {
 		private readonly options: EncryptionWrapperOptions,
 	) {
 		const { password, memoryDB } = options;
-		const marker = `${original.getUid()}~${password}`;
+		const marker = `${this.getLegacyUid()}~${password}`;
 		this.pathStores = {
 			decryptedToEncrypted: memoryDB.getStore('decryptedToEncrypted'),
 			encryptedToDecrypted: memoryDB.getStore('encryptedToDecrypted'),
@@ -166,10 +158,24 @@ class EncryptionFs implements WrappedFs {
 		return this.keysPromise;
 	}
 
+	// TODO: remove after April 17, 2027
+	private getLegacyUid(): string {
+		const uid = this.original.getUid();
+		const { legacyEndpoint } = this.options;
+		if (!legacyEndpoint) return uid;
+		let endpoint: string;
+		try {
+			endpoint = parseUrl(legacyEndpoint);
+		} catch {
+			return uid;
+		}
+		return uid.replace(endpoint, legacyEndpoint);
+	}
+
 	private async createKeysPromise(): Promise<DerivedKeys> {
 		const encryptionKeys = this.options.memoryDB.getMeta('encryptionKeys');
 		if (encryptionKeys) return encryptionKeys;
-		const masterSalt = await deriveMasterSalt(this.original.getUid());
+		const masterSalt = await deriveMasterSalt(this.getLegacyUid());
 		const masterKey = await deriveMasterKey(this.options.password, masterSalt);
 		const [rootFileKey, nameKey, metaKey] = await Promise.all([
 			deriveRootFileKey(masterKey),

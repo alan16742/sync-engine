@@ -1,8 +1,5 @@
-import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, It as Stat, K as Decider, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, Rt as Binary, ct as TaskNames, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-C3G188Hn.spec.js";
-//#region src/sdk/debug-wrapper.d.ts
+import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, G as TaskNames, It as Stat, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, R as Decider, Rt as Binary, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-BDQ5Fxzf.spec.js";
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;
-//#endregion
-//#region test/test-kit.d.ts
 type FsCalls = {
   delete: Array<string>;
   exists: Array<string>;
@@ -83,8 +80,5 @@ declare const testKit: {
   taskKeys: typeof taskKeys;
   taskNames: typeof taskNames;
 };
-//#endregion
-//#region src/utils/sha-256.d.ts
 declare function sha256(input: string): Promise<string>;
-//#endregion
 export { debugWrapper, sha256, testKit };

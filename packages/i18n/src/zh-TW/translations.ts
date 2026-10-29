@@ -136,6 +136,7 @@ const zhTW: Translations = {
 		}),
 	iconPlaceholder: '輸入圖示代碼（例如 puzzle）',
 	idle: '待命',
+	installModuleFromCode: '從程式碼安裝模組',
 	installModuleFromFile: '從檔案安裝模組',
 	installed: '已安裝',
 	integrityCheckFailed:
@@ -290,9 +291,7 @@ const zhTW: Translations = {
 			p1.appendText('Sync Engine 偵測到一個已安裝的模組，名為 ');
 			p1.createEl('code', { text: fileName });
 			p1.appendText('，此模組從未在此庫中向 Sync Engine 註冊。');
-			p1.createEl('strong', {
-				text: '請在繼續之前檢閱以下資訊：',
-			});
+			p1.createEl('strong', { text: '請在繼續之前檢閱以下資訊：' });
 			const ul = frag
 				.createDiv(
 					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
@@ -333,8 +332,11 @@ const zhTW: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
 	walkingRemote: '正在掃描遠端檔案',
+	writeCode: '撰寫程式碼',
+	writeCodeDescription: '在此處以 JavaScript 撰寫您的模組程式碼',
 	xConfigured: (count) => `已設定 ${count} 項`,
 	xEnabled: (count) => `已啟用 ${count} 個模組`,
+	xOperationsFailed: (count) => `${count} 個操作失敗`,
 	xSelected: (count) => `（已選擇 ${count} 項）`,
 };
 

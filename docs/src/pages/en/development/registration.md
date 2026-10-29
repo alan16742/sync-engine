@@ -92,10 +92,7 @@ ctx.registerLocalRequestMiddleware(entry: LocalRequestMiddlewareEntry): () => bo
 Register an entry that supplies sync options for a trigger name. See [sync: sync trigger](./sync#sync-trigger).
 
 ```ts
-type TriggerEntry = {
-  priority: number;
-  options?: () => SyncOptions;
-};
+type TriggerEntry = { priority: number; options?: () => SyncOptions };
 ```
 
 ```ts
@@ -107,7 +104,7 @@ ctx.registerTrigger(key: string, entry: TriggerEntry): () => boolean;
 Register a sync decision strategy. Stats are bucketed by the registered ID during planning, so each ID doubles as a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. See [sync: decider](./sync#decider).
 
 ```ts
-type DeciderEntry = { decider: Decider; prettyName: () => string };
+type DeciderEntry = { decider: Decider; prettyName?: () => string };
 ```
 
 ```ts

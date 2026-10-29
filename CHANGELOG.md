@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.3.4 - 2026-10-27
+
+### Core
+
+- Supported loading module from JavaScript code.
+- Fixed deselecting a child move operation subsumed by a parent move during sync plan phase still moves the child. Now deselected children moves will be kept as-is.
+
+## Sync Engine v3.3.3 - 2026-10-21
+
+### Core
+
+- Fixed syncing a re-included file whose parent folders have "Don't sync" sync strategy causing sync failures.
+- Optimized sync strategy matching performance.
+
+### Google Drive Module
+
+- Enhanced token scope check and error message parsing.
+
+## Sync Engine v3.3.2 - 2026-10-18
+
+### Core
+
+- Enforced new URL canonicalization discipline.
+- Clicking a collapsed file path in the failed operations pop-up now expands the path.
+
+### WebDAV Module
+
+- Enforced new URL canonicalization discipline.
+- Fixed moving a file onto an existing file causes a 412 error.
+
+### S3 Module
+
+- Enforced new URL canonicalization discipline.
+
+### Encryption Module
+
+- Due to the URL canonicalization, WebDAV and S3 endpoints containing some rare characters will change. Since the decryption password is bound to the URL, these users need a remote migration. This should only affect a small portion of users.
+- Implemented URL compatibility mode and remote migration notice.
+
 ## Sync Engine v3.3.1 - 2026-10-11
 
 ### Core

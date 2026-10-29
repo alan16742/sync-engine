@@ -1,30 +1,22 @@
-import type { Events, Translations } from '@';
-import type { App } from 'obsidian';
-import type { Ref } from 'synthkernel';
-import { Modal, Setting } from 'obsidian';
-import { computed, hook } from 'synthkernel';
-import type { BaseTask, RemoveLocal, TaskNames } from '@/sync';
-import type { Progress } from '@/types';
 import mountFileTree from '@/components/file-tree';
 import renderFailedTasks from '@/components/render-failed-tasks';
 import renderProgress from '@/components/render-progress';
 import roundPercent from '@/utils/round-percent';
+import { Modal, Setting } from 'obsidian';
+import { computed, hook } from 'synthkernel';
 import type { Dispatch, On } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { SyncStage } from './Observability';
 import type { FailedTaskInfo, TaskInfo } from './Sync';
+import type { Events, Translations } from '@';
+import type { Task, RemoveLocal, TaskNames } from '@/sync';
+import type { Progress } from '@/types';
+import type { App } from 'obsidian';
+import type { Ref } from 'synthkernel';
 
-export type DeleteConfirmReturn = {
-	delete: Array<RemoveLocal>;
-	reupload: Array<RemoveLocal>;
-};
+export type DeleteConfirmReturn = { delete: Array<RemoveLocal>; reupload: Array<RemoveLocal> };
 
-type TaskCounts = {
-	total: number;
-	deleteLocal: number;
-	deleteRemote: number;
-	conflict: number;
-};
+type TaskCounts = { total: number; deleteLocal: number; deleteRemote: number; conflict: number };
 
 export default class ProgressModal extends Modal {
 	private readonly moduleCleanupCallbacks: Array<() => void> = [];
@@ -66,7 +58,7 @@ export default class ProgressModal extends Modal {
 					this.renderDone();
 				}
 				this.description?.setText(this.t('failedTasksDescription', failedTasks.length));
-				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks);
+				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks, this.t);
 				this.showDetails();
 				failedTasks.length = 0;
 			}),
@@ -127,10 +119,7 @@ export default class ProgressModal extends Modal {
 		);
 	}
 
-	declare readonly events: {
-		tasksConfirmed: Array<BaseTask>;
-		deleteConfirmed: DeleteConfirmReturn;
-	};
+	declare readonly events: { tasksConfirmed: Array<Task>; deleteConfirmed: DeleteConfirmReturn };
 
 	declare readonly i18n: {
 		syncProgress: string;
@@ -264,11 +253,11 @@ export default class ProgressModal extends Modal {
 			{ deps: [this.ctx.walkProgress, this.ctx.syncStage, this.ctx.executionProgress] },
 		);
 
-		const container = contentEl.createDiv('flex flex-col gap-4 max-h-[75vh] pt-3 pb-3');
+		const container = contentEl.createDiv('flex flex-col gap-4 max-h-75vh py-3');
 		const { bar, left, right } = renderProgress(container);
 		this.description = container.createEl('p', 'whitespace-pre-line hidden my-0');
 		this.detailContainer = container.createDiv(
-			'max-h-[50vh] overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
+			'max-h-50vh overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
 		);
 
 		this.modalCleanupCallbacks.subscribe(

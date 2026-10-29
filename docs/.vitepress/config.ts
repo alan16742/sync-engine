@@ -1,10 +1,10 @@
 // oxlint-disable import/no-nodejs-modules
-import type { ThemeConfig } from 'vitepress-theme-trito';
+import { configGenerator } from './i18n';
 import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import canvas from 'vite-plugin-json-canvas';
 import { defineConfig } from 'vitepress';
-import { configGenerator } from './i18n';
+import type { ThemeConfig } from 'vitepress-theme-trito';
 
 function p(path: string) {
 	return resolve(import.meta.dirname, '..', path);
@@ -44,11 +44,7 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 			},
 			nav: [
 				{ link: `${t('folder')}/`, text: t('home') },
-				{
-					activeMatch: `${usage}/.+`,
-					link: `${usage}/welcome`,
-					text: t('usage'),
-				},
+				{ activeMatch: `${usage}/.+`, link: `${usage}/welcome`, text: t('usage') },
 				{
 					activeMatch: `${development}/.+`,
 					link: `${development}/develop-a-module`,
@@ -121,11 +117,12 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 				[`${deepDive}/`]: {
 					items: [
 						{ link: `${deepDive}/architecture`, text: t('architecture') },
-						{ link: `${deepDive}/sync`, text: t('sync') },
-						{ link: `${deepDive}/extensibility`, text: t('extensibility') },
+						{ link: `${deepDive}/discipline`, text: t('discipline') },
+						{ link: `${deepDive}/migration`, text: t('migration') },
 						{ link: `${deepDive}/benchmarking`, text: t('benchmarking') },
 						{
 							items: [
+								{ link: `${deepDive}/sync`, text: t('sync') },
 								{ link: `${deepDive}/file-system`, text: t('fileSystem') },
 								{
 									link: `${deepDive}/file-system-wrappers`,
@@ -140,6 +137,7 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 									link: `${deepDive}/request-middleware`,
 									text: t('requestMiddleware'),
 								},
+								{ link: `${deepDive}/extensibility`, text: t('extensibility') },
 							],
 							text: t('abstractions'),
 						},
@@ -184,9 +182,7 @@ export default defineConfig<ThemeConfig>({
 		['meta', { content: 'dark light', name: 'color-scheme' }],
 	],
 	lastUpdated: true,
-	locales: {
-		root: localeConfig('en'),
-	},
+	locales: { root: localeConfig('en') },
 	markdown: { image: { lazyLoad: true } },
 	outDir: p('dist'),
 	rewrites: { 'en/:rest*': ':rest*' },

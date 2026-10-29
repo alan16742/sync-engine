@@ -1,11 +1,6 @@
 import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
-//#region ../shared/src/e2e-utils.spec.d.ts
 type General$1 = any;
-//#endregion
-//#region ../shared/src/binary.d.ts
 type Binary = Uint8Array<ArrayBuffer>;
-//#endregion
-//#region src/types.d.ts
 type MaybePromise<T> = Promise<T> | T;
 type TogglableValue<T = number> = {
   enabled: boolean;
@@ -43,13 +38,12 @@ type Progress<T = string> = {
   completed: number;
   current?: T;
 };
-//#endregion
-//#region src/fs/interface.d.ts
 /**
  * All keys use unified format:
- * - root: `/`
- * - file: `note.md`, `folder/note.md`
- * - folder: `folder/`, `folder/nested/`
+ *
+ * - Root: `/`
+ * - File: `note.md`, `folder/note.md`
+ * - Folder: `folder/`, `folder/nested/`
  */
 type RootFs = {
   getUid(): string;
@@ -112,8 +106,6 @@ type OptimizerInput = {
 };
 type OptimizerOutput = Array<OutputAtom>;
 type BatchOptimizer = (input: OptimizerInput) => OptimizerOutput;
-//#endregion
-//#region ../../node_modules/.bun/uni-kv@.+uni-kv.tgz/node_modules/uni-kv/dist/interface.d.ts
 //#region src/interface.d.ts
 type Database<D extends Record<string, unknown>, M extends Record<string, unknown>, F extends boolean> = {
   getStore<K extends keyof D>(name: K): Store<D[K], F>;
@@ -157,8 +149,6 @@ type DeleteOperation = {
 };
 type StoreOperations<T> = GetOperation | SetOperation<T> | DeleteOperation;
 type IsPromise<T, F extends boolean> = F extends true ? Promise<T> : T;
-//#endregion
-//#region ../../node_modules/.bun/synthkernel@.+synthkernel.tgz/node_modules/synthkernel/dist/context.d.ts
 //#region src/context.d.ts
 type General = any;
 type GeneralConstructor = new (...args: Array<General>) => General;
@@ -185,8 +175,6 @@ type Context$1<M extends GeneralModuleInput, K extends Keys<InstanceEach<M>[numb
 };
 declare const ROOT_KEY = "root";
 type RootKey = typeof ROOT_KEY;
-//#endregion
-//#region ../../node_modules/.bun/synthkernel@.+synthkernel.tgz/node_modules/synthkernel/dist/reactive.d.ts
 //#region src/reactive.d.ts
 type RefMatchingFunc<T> = (newValue: T, oldValue: T) => unknown;
 type Ref<T> = {
@@ -198,8 +186,55 @@ type Ref<T> = {
   unsubscribe(func: RefMatchingFunc<T>): void;
   clear(): void;
 };
-//#endregion
-//#region src/modules/Storage.d.ts
+type Dispatch<O extends object> = <K extends keyof O>(...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]) => void;
+type On<O extends object> = <K extends keyof O>(key: K, callback: (payload: O[K]) => void) => () => void;
+declare class EventBus {
+  readonly events: {
+    logSync: string;
+    logGeneral: string;
+    errorSync: Error;
+    errorGeneral: Error;
+  };
+  private readonly cleanupCallbacks;
+  private readonly isIdle;
+  private readonly syncLogs;
+  private readonly generalLogs;
+  constructor();
+  private readonly getThisSync;
+  private readonly putSyncLog;
+  private readonly putGeneralLog;
+  private readonly putSyncError;
+  private readonly putGeneralError;
+  private readonly subscribers;
+  private readonly on;
+  private readonly dispatch;
+  private readonly getLogs;
+  readonly dispose: () => void;
+  readonly root: {
+    dispatch: Dispatch<General$1>;
+    getLogs: () => string;
+    isIdle: Ref<boolean>;
+    on: On<General$1>;
+  };
+}
+type ObsidianLanguageCode = 'en' | 'af' | 'am' | 'ar' | 'az' | 'be' | 'bg' | 'bn' | 'ca' | 'cs' | 'da' | 'de' | 'dv' | 'el' | 'en-GB' | 'eo' | 'es' | 'eu' | 'fa' | 'fi' | 'fr' | 'ga' | 'gl' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ka' | 'kh' | 'kn' | 'ko' | 'ky' | 'la' | 'lt' | 'lv' | 'ml' | 'ms' | 'nan-TW' | 'ne' | 'nl' | 'nn' | 'no' | 'oc' | 'or' | 'pl' | 'pt' | 'pt-BR' | 'ro' | 'ru' | 'sa' | 'si' | 'sk' | 'sl' | 'sq' | 'sr' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr' | 'tt' | 'uk' | 'ur' | 'uz' | 'vi' | 'zh' | 'zh-TW';
+type Factory<A = undefined> = (args: A) => DocumentFragment | string;
+type Fragment<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => DocumentFragment;
+type Snippet<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => string;
+type TranslationTypes = string | Factory<General$1>;
+type TranslationResource = Record<string, TranslationTypes>;
+type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? ([undefined] extends [A] ? [] : [A]) : [];
+type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
+declare class I18n {
+  private readonly targetLangs;
+  readonly i18n: {};
+  private readonly registerI18n;
+  private readonly translate;
+  root: {
+    registerI18n: (code: ObsidianLanguageCode, resource: TranslationResource) => void;
+    translate: Translate<TranslationResource>;
+  };
+}
 type RecordStore = StoreAsync<RecordStat>;
 declare class Storage {
   private readonly ctx;
@@ -239,14 +274,102 @@ declare class Storage {
   };
   readonly dispose: () => void;
 }
-//#endregion
-//#region src/sync/tasks/interface.d.ts
+declare class CreateLocalDir extends BaseTask<WithRemoteFolderStat> {
+  exec(): Promise<void>;
+  readonly name = "createLocalDir";
+}
+declare class CreateRemoteDir extends BaseTask<WithLocalFolderStat> {
+  exec(): Promise<void>;
+  readonly name = "createRemoteDir";
+}
+declare class Download extends BaseTask<WithRemoteFileStat> {
+  exec(): Promise<void>;
+  readonly name = "download";
+}
+declare class MoveLocal extends BaseTask<WithNewKey> {
+  exec(): Promise<void>;
+  readonly name = "moveLocal";
+}
+declare class MoveRemote extends BaseTask<WithNewKey> {
+  exec(): Promise<void>;
+  readonly name = "moveRemote";
+}
+declare class RemoveLocal extends BaseTask<WithLocalStat> {
+  exec(): Promise<void>;
+  readonly name = "removeLocal";
+}
+declare class RemoveRecord extends BaseTask {
+  exec(): Promise<void>;
+  readonly name = "removeRecord";
+}
+declare class RemoveRemote extends BaseTask<WithRemoteStat> {
+  exec(): Promise<void>;
+  readonly name = "removeRemote";
+}
+declare class ResolveConflict extends BaseTask<WithBothFileStats & {
+  resolver: ConflictResolver;
+}> {
+  exec: () => MaybePromise<void>;
+  readonly name = "resolveConflict";
+}
+declare class Upload extends BaseTask<WithLocalFileStat> {
+  exec(): Promise<void>;
+  readonly name = "upload";
+}
 type BaseTaskOptions = {
   localFs: Fs;
   remoteFs: Fs;
   record: RecordStore;
 };
+type GenericOptions = {
+  key: string;
+  local?: Stat$1;
+  remote?: Stat$1;
+};
+type WithRemoteFileStat = {
+  remote: FileStat;
+} & GenericOptions;
+type WithLocalFileStat = {
+  local: FileStat;
+} & GenericOptions;
+type WithRemoteFolderStat = {
+  remote: FolderStat;
+} & GenericOptions;
+type WithLocalFolderStat = {
+  local: FolderStat;
+} & GenericOptions;
+type WithLocalStat = {
+  local: Stat$1;
+} & GenericOptions;
+type WithRemoteStat = {
+  remote: Stat$1;
+} & GenericOptions;
+type WithBothStats = {
+  local: Stat$1;
+  remote: Stat$1;
+} & GenericOptions;
+type WithBothFileStats = {
+  local: FileStat;
+  remote: FileStat;
+} & GenericOptions;
+type WithNewKey = {
+  newKey: string;
+} & GenericOptions;
+type TaskOptionsMap = {
+  download: WithRemoteFileStat;
+  upload: WithLocalFileStat;
+  resolveConflict: WithBothFileStats;
+  removeLocal: WithLocalStat;
+  removeRemote: WithRemoteStat;
+  createLocalDir: WithRemoteFolderStat;
+  createRemoteDir: WithLocalFolderStat;
+  removeRecord: GenericOptions;
+  addRecord: WithBothStats;
+  moveLocal: WithNewKey;
+  moveRemote: WithNewKey;
+};
 type TaskNames = 'addRecord' | 'removeRecord' | 'createLocalDir' | 'createRemoteDir' | 'download' | 'resolveConflict' | 'removeLocal' | 'removeRemote' | 'upload' | 'moveLocal' | 'moveRemote';
+type Task = CreateLocalDir | CreateRemoteDir | Download | Upload | RemoveLocal | RemoveRemote | RemoveRecord | AddRecord | ResolveConflict | MoveLocal | MoveRemote;
 type ConflictResolverPayload = {
   local: FileStat;
   remote: FileStat;
@@ -256,125 +379,22 @@ type ConflictResolverPayload = {
   record: RecordStore;
 };
 type ConflictResolver = (payload: ConflictResolverPayload) => MaybePromise<void>;
-declare abstract class BaseTask<T extends TaskOptions = TaskOptions> {
+declare abstract class BaseTask<T extends GenericOptions = GenericOptions> {
   readonly options: BaseTaskOptions & T;
   constructor(options: BaseTaskOptions & T);
-  protected readonly remoteFs: Fs;
-  protected readonly localFs: Fs;
-  protected readonly record: RecordStore;
-  name: TaskNames;
-  prettyName: string;
+  readonly remoteFs: Fs;
+  readonly localFs: Fs;
+  readonly record: RecordStore;
   readonly key: string;
-  readonly local: (BaseTaskOptions & T)['local'];
-  readonly remote: (BaseTaskOptions & T)['remote'];
+  readonly local: T['local'];
+  readonly remote: T['remote'];
   abstract exec(): MaybePromise<void>;
+  abstract readonly name: TaskNames;
 }
-//#endregion
-//#region src/sync/tasks/AddRecord.d.ts
-declare class AddRecord extends BaseTask<OptionsWithBothStats> {
+declare class AddRecord extends BaseTask<WithBothStats> {
   exec(): Promise<void>;
+  readonly name = "addRecord";
 }
-//#endregion
-//#region src/sync/tasks/CreateRemoteDir.d.ts
-declare class CreateRemoteDir extends BaseTask<OptionsWithLocalFolderStat> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/Download.d.ts
-declare class Download extends BaseTask<OptionsWithRemoteFileStat> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/MoveLocal.d.ts
-declare class MoveLocal extends BaseTask<OptionsWithRemoteStatAndOldKey> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/MoveRemote.d.ts
-declare class MoveRemote extends BaseTask<OptionsWithLocalStatAndOldKey> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/RemoveLocal.d.ts
-declare class RemoveLocal extends BaseTask<OptionsWithLocalStat> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/RemoveRecord.d.ts
-declare class RemoveRecord extends BaseTask {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/RemoveRemote.d.ts
-declare class RemoveRemote extends BaseTask<OptionsWithRemoteStat> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/tasks/ResolveConflict.d.ts
-declare class ResolveConflict extends BaseTask<OptionsWithBothFileStats & {
-  resolver: ConflictResolver;
-}> {
-  exec: () => MaybePromise<void>;
-}
-//#endregion
-//#region src/sync/tasks/Upload.d.ts
-declare class Upload extends BaseTask<OptionsWithLocalFileStat> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/sync/decision/interface.d.ts
-type TaskOptions = {
-  key: string;
-  remote?: Stat$1;
-  local?: Stat$1;
-};
-type OptionsWithRemoteFileStat = {
-  remote: FileStat;
-} & TaskOptions;
-type OptionsWithLocalFileStat = {
-  local: FileStat;
-} & TaskOptions;
-type OptionsWithRemoteFolderStat = {
-  remote: FolderStat;
-} & TaskOptions;
-type OptionsWithLocalFolderStat = {
-  local: FolderStat;
-} & TaskOptions;
-type OptionsWithLocalStat = {
-  local: Stat$1;
-} & TaskOptions;
-type OptionsWithRemoteStat = {
-  remote: Stat$1;
-} & TaskOptions;
-type OptionsWithBothStats = {
-  local: Stat$1;
-  remote: Stat$1;
-} & TaskOptions;
-type OptionsWithBothFileStats = {
-  local: FileStat;
-  remote: FileStat;
-} & TaskOptions;
-type OptionsWithLocalStatAndOldKey = {
-  local: Stat$1;
-  oldKey: string;
-} & TaskOptions;
-type OptionsWithRemoteStatAndOldKey = {
-  remote: Stat$1;
-  oldKey: string;
-} & TaskOptions;
-type TaskOptionsMap = {
-  download: OptionsWithRemoteFileStat;
-  upload: OptionsWithLocalFileStat;
-  resolveConflict: OptionsWithBothFileStats;
-  removeLocal: OptionsWithLocalStat;
-  removeRemote: OptionsWithRemoteStat;
-  createLocalDir: OptionsWithRemoteFolderStat;
-  createRemoteDir: OptionsWithLocalFolderStat;
-  removeRecord: TaskOptions;
-  addRecord: OptionsWithBothStats;
-  moveLocal: OptionsWithRemoteStatAndOldKey;
-  moveRemote: OptionsWithLocalStatAndOldKey;
-};
 declare const taskMap: {
   readonly addRecord: typeof AddRecord;
   readonly createLocalDir: typeof CreateLocalDir;
@@ -389,210 +409,17 @@ declare const taskMap: {
   readonly upload: typeof Upload;
 };
 type TaskFactory = <N extends TaskNames>(name: N, options: TaskOptionsMap[N]) => InstanceType<(typeof taskMap)[N]>;
-type Decider = (input: DeciderInput) => Array<BaseTask>;
+type Decider = (input: DeciderInput) => Array<Task>;
 type DeciderInput = {
   localStats: StatsMap;
   remoteStats: StatsMap;
   records: RecordStatsMap;
   taskFactory: TaskFactory;
 };
-//#endregion
-//#region src/sync/tasks/CreateLocalDir.d.ts
-declare class CreateLocalDir extends BaseTask<OptionsWithRemoteFolderStat> {
-  exec(): Promise<void>;
-}
-//#endregion
-//#region src/modules/EventBus.d.ts
-type Dispatch<O extends object> = <K extends keyof O>(...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]) => void;
-type On<O extends object> = <K extends keyof O>(key: K, callback: (payload: O[K]) => void) => () => void;
-declare class EventBus {
-  readonly events: {
-    logSync: string;
-    logGeneral: string;
-    errorSync: Error;
-    errorGeneral: Error;
-  };
-  private readonly cleanupCallbacks;
-  private readonly isIdle;
-  private readonly syncLogs;
-  private readonly generalLogs;
-  constructor();
-  private readonly getThisSync;
-  private readonly putSyncLog;
-  private readonly putGeneralLog;
-  private readonly putSyncError;
-  private readonly putGeneralError;
-  private readonly subscribers;
-  private readonly on;
-  private readonly dispatch;
-  private readonly getLogs;
-  readonly dispose: () => void;
-  readonly root: {
-    dispatch: Dispatch<General$1>;
-    getLogs: () => string;
-    isIdle: Ref<boolean>;
-    on: On<General$1>;
-  };
-}
-//#endregion
-//#region src/modules/I18n.d.ts
-type ObsidianLanguageCode = 'en' | 'af' | 'am' | 'ar' | 'az' | 'be' | 'bg' | 'bn' | 'ca' | 'cs' | 'da' | 'de' | 'dv' | 'el' | 'en-GB' | 'eo' | 'es' | 'eu' | 'fa' | 'fi' | 'fr' | 'ga' | 'gl' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ka' | 'kh' | 'kn' | 'ko' | 'ky' | 'la' | 'lt' | 'lv' | 'ml' | 'ms' | 'nan-TW' | 'ne' | 'nl' | 'nn' | 'no' | 'oc' | 'or' | 'pl' | 'pt' | 'pt-BR' | 'ro' | 'ru' | 'sa' | 'si' | 'sk' | 'sl' | 'sq' | 'sr' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr' | 'tt' | 'uk' | 'ur' | 'uz' | 'vi' | 'zh' | 'zh-TW';
-type Factory<A = undefined> = (args: A) => DocumentFragment | string;
-type Fragment<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => DocumentFragment;
-type Snippet<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => string;
-type TranslationTypes = string | Factory<General$1>;
-type TranslationResource = Record<string, TranslationTypes>;
-type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? ([undefined] extends [A] ? [] : [A]) : [];
-type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
-declare class I18n {
-  private readonly targetLangs;
-  readonly i18n: {};
-  private readonly registerI18n;
-  private readonly translate;
-  root: {
-    registerI18n: (code: ObsidianLanguageCode, resource: TranslationResource) => void;
-    translate: Translate<TranslationResource>;
-  };
-}
-//#endregion
-//#region src/utils/glob-match.d.ts
-type GlobMatchResult = {
-  strategy: string;
-  advance?: boolean;
-};
-//#endregion
-//#region src/modules/Sync.d.ts
-type SyncTerminateReason = {
-  result: 'cancelled';
-} | {
-  result: 'completed';
-} | {
-  result: 'failed';
-  error: Error;
-} | {
-  result: 'noop';
-};
-type TaskInfo = {
-  name: TaskNames;
-  key: string;
-  prettyName: string;
-  isDir: boolean;
-};
-type FailedTaskInfo = TaskInfo & {
-  error: Error;
-};
-type RemoteLister = (info: Infras & {
-  reporter: ListReporter;
-}) => MaybePromise<Array<Stat$1>>;
-type SyncOptions = {
-  remoteLister?: RemoteLister;
-  conflictResolver?: ConflictResolver;
-  detectMoves?: boolean;
-  needConfirmTasks?: boolean;
-  needConfirmDeletion?: boolean;
-  syncStrategy?: Array<GlobStrategy>;
-};
-declare class Sync {
-  private readonly ctx;
-  constructor(ctx: {
-    dispatch: Dispatch<Events>;
-    initializeSync: () => Infras;
-    on: On<Events>;
-    translate: Translate<Translations>;
-    getConflictResolver: () => ConflictResolver;
-    decideTasks: (input: DecideTasksInput) => Array<BaseTask>;
-  });
-  readonly events: {
-    syncStarted: {
-      isCancelled: Ref<boolean>;
-      trigger: string;
-    };
-    syncInitialized: Infras & {
-      match: (path: string) => GlobMatchResult;
-    };
-    remoteWalkProgress: Progress;
-    syncTerminated: SyncTerminateReason;
-    requestConfirmDelete: Array<RemoveLocal>;
-    requestConfirmTasks: Array<BaseTask>;
-    syncCanceled: undefined;
-    taskCompleted: TaskInfo;
-    taskFailed: FailedTaskInfo;
-    executionStarted: Array<BaseTask>;
-  };
-  readonly settings: {
-    maxFileSize: TogglableValue;
-    syncStrategy: Array<GlobStrategy>;
-  };
-  private readonly postProcess;
-  private readonly confirmTasks;
-  private readonly confirmDeletion;
-  private readonly executeSync;
-  private readonly convertDeleteToUpload;
-  root: {
-    executeSync: (trigger: string, options?: SyncOptions) => Promise<SyncTerminateReason>;
-  };
-}
-//#endregion
-//#region src/modules/Observability.d.ts
-type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
-type AddRibbonIcon = (icon: IconName, title: string, callback: (evt: MouseEvent) => void) => HTMLElement;
-declare class Observability {
-  private readonly ctx;
-  private lastSyncTime;
-  private lastFailure?;
-  private readonly sinceLastSyncText;
-  private readonly syncStage;
-  private readonly walkProgress;
-  private readonly executionProgress;
-  private readonly cleanupCallbacks;
-  private readonly t;
-  private readonly progressText;
-  readonly settings: {
-    noticeStatusOnMobile: boolean;
-    exportLogsDirectory: string;
-  };
-  readonly i18n: {
-    startSync: string;
-    startNonInteractiveSync: string;
-    stopSync: string;
-    showProgress: string;
-    exportLogsToFile: string;
-    exportLogsFailed: string;
-    idle: string;
-  };
-  constructor(ctx: {
-    addStatusBarItem: () => HTMLElement;
-    on: On<Events>;
-    translate: Translate<Translations>;
-    isIdle: Ref<boolean>;
-    dispatch: Dispatch<Events>;
-    requestSync: (trigger: string) => Promise<SyncTerminateReason>;
-    showProgress: () => void;
-    addCommand: (command: Command) => Command;
-    addRibbonIcon: AddRibbonIcon;
-    getLogs: () => string;
-    app: App;
-  });
-  readonly start: () => void;
-  private readonly setupStatus;
-  private readonly setupCommands;
-  private readonly exportLogs;
-  readonly dispose: () => void;
-  root: {
-    executionProgress: Ref<Progress<TaskInfo>>;
-    exportLogs: () => Promise<void>;
-    syncStage: Ref<SyncStage>;
-    walkProgress: Ref<Progress>;
-  };
-}
-//#endregion
-//#region src/components/file-tree/index.d.ts
 type FileTreeTranslations = {
   selectAll: string;
   xSelected: Snippet<number>;
-};
-//#endregion
-//#region src/modules/Extensibility.d.ts
+} & Record<TaskNames, string>;
 type ModuleInstance = {
   moduleSettings: object;
   dispose?: () => void;
@@ -682,8 +509,6 @@ declare class Extensibility {
     updateModules: () => Promise<void>;
   };
 }
-//#endregion
-//#region src/components/UntrustedModuleModal.d.ts
 type FileInfo = {
   path: string;
   size: string;
@@ -697,8 +522,6 @@ type UntrustedModuleTranslations = {
   delete: string;
   configure: string;
 };
-//#endregion
-//#region src/modules/Setting.d.ts
 type SettingTree = {
   (self: SettingTree): SettingDefinitionItem;
   [key: number]: SettingTree;
@@ -754,8 +577,6 @@ declare class Setting$1 {
   };
   readonly dispose: () => void;
 }
-//#endregion
-//#region src/settings/utils.d.ts
 type EphemeralEditableItem<T> = {
   valid: boolean;
   new: boolean;
@@ -799,8 +620,6 @@ declare function generateEditableList<T>({ memoryDB, items, identifier, saveSett
   extraButtons?: Array<(button: ExtraButtonComponent, list: Array<EphemeralEditableItem<T>>, save: () => void) => void>;
   reorder?: boolean;
 }): SettingDefinitionList;
-//#endregion
-//#region src/settings/controls.d.ts
 type ControlsSettingTranslations = {
   controls: string;
   maxFileSize: string;
@@ -816,8 +635,6 @@ type ControlsSettingTranslations = {
   maxMemoryConsumptionDescription: string;
   maxMemoryConsumptionPlaceholder: string;
 };
-//#endregion
-//#region src/settings/development.d.ts
 type DevelopmentSettingTranslations = {
   development: string;
   clearRecords: string;
@@ -836,8 +653,6 @@ type DevelopmentSettingTranslations = {
   noSourceConfigured: string;
   moduleSourcePlaceholder: string;
 };
-//#endregion
-//#region src/components/MigrationModal.d.ts
 type MigrationModalTranslations = {
   cancel: string;
   confirm: string;
@@ -853,8 +668,6 @@ declare function setNeedMigration({ app, translate }: {
   content: (value: boolean) => string | DocumentFragment;
   apply: (value: boolean) => MaybePromise<void>;
 }): void;
-//#endregion
-//#region src/settings/features.d.ts
 type FeaturesSettingTranslations = {
   features: string;
   realtimeSyncFastMode: string;
@@ -872,11 +685,7 @@ type FeaturesSettingTranslations = {
   asymmetricStorageDescription: Fragment;
   asymmetricStorageMigration: Fragment<boolean>;
 } & MigrationModalTranslations;
-//#endregion
-//#region src/sdk/prefix.d.ts
 declare function prefixWrapper(original: Fs, prefix: string): WrappedFs;
-//#endregion
-//#region src/utils/pipe.d.ts
 declare const chunkSize: number, concurrency: number;
 declare function pipe({ from, to, stat, key }: {
   from: Fs;
@@ -886,12 +695,8 @@ declare function pipe({ from, to, stat, key }: {
 }): Promise<string | undefined>;
 declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary> | undefined>;
 declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
-//#endregion
-//#region src/sdk/index.d.ts
 declare function digOriginal(wrapped: Fs): RootFs;
 type SelectFromContext<O extends object> = Context extends O ? O : never;
-//#endregion
-//#region src/settings/head.d.ts
 type HeadSettingTranslations = {
   moduleAutoUpdate: string;
   moduleAutoUpdateDescription: string;
@@ -915,11 +720,8 @@ type HeadSettingTranslations = {
   }>;
   addStrategy: string;
   noStrategyConfigured: string;
-  dontSync: string;
 };
 declare function addLabel(element: Element, { text, tooltip, color, textColor }: LabelDefinition): HTMLSpanElement;
-//#endregion
-//#region src/settings/miscellaneous.d.ts
 type MiscellaneousSettingTranslations = {
   miscellaneous: string;
   diffMatchPatch: string;
@@ -944,8 +746,12 @@ type MiscellaneousSettingTranslations = {
   avoidAutoSyncWhenOffline: string;
   avoidAutoSyncWhenOfflineDescription: string;
 };
-//#endregion
-//#region src/components/module-management/index.d.ts
+type CodeInputTranslations = {
+  confirm: string;
+  cancel: string;
+  writeCode: string;
+  writeCodeDescription: string;
+};
 type ModuleManagementTranslations = {
   disableModule: string;
   downloadModule: string;
@@ -963,8 +769,6 @@ type ModuleManagementTranslations = {
   someModulesHidden: string;
   openReadme: string;
 };
-//#endregion
-//#region src/components/ModuleEditorModal.d.ts
 type ModuleEditorTranslations = {
   editModuleInformation: string;
   enable: string;
@@ -989,17 +793,14 @@ type ModuleEditorTranslations = {
   readmePageDescription: string;
   readmePagePlaceholder: string;
 };
-//#endregion
-//#region src/settings/module-management.d.ts
-type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & {
+type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations & {
   searchModules: string;
   moduleManagement: string;
   showInstalledOnly: string;
   installModuleFromFile: string;
+  installModuleFromCode: string;
   moduleExtensionWarning: Fragment;
 };
-//#endregion
-//#region src/modules/Bootstrap.d.ts
 type CustomHeaders = Array<{
   type: 'plaintext' | 'secret';
   value: string;
@@ -1032,6 +833,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
+    dontSync: string;
   } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
@@ -1066,8 +868,57 @@ declare class Bootstrap {
   readonly start: () => void;
   readonly dispose: () => void;
 }
-//#endregion
-//#region src/modules/ProgressModal.d.ts
+type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
+type AddRibbonIcon = (icon: IconName, title: string, callback: (evt: MouseEvent) => void) => HTMLElement;
+declare class Observability {
+  private readonly ctx;
+  private lastSyncTime;
+  private lastFailure?;
+  private readonly sinceLastSyncText;
+  private readonly syncStage;
+  private readonly walkProgress;
+  private readonly executionProgress;
+  private readonly cleanupCallbacks;
+  private readonly t;
+  private readonly progressText;
+  readonly settings: {
+    noticeStatusOnMobile: boolean;
+    exportLogsDirectory: string;
+  };
+  readonly i18n: {
+    startSync: string;
+    startNonInteractiveSync: string;
+    stopSync: string;
+    showProgress: string;
+    exportLogsToFile: string;
+    exportLogsFailed: string;
+    idle: string;
+  };
+  constructor(ctx: {
+    addStatusBarItem: () => HTMLElement;
+    on: On<Events>;
+    translate: Translate<Translations>;
+    isIdle: Ref<boolean>;
+    dispatch: Dispatch<Events>;
+    requestSync: (trigger: string) => Promise<SyncTerminateReason>;
+    showProgress: () => void;
+    addCommand: (command: Command) => Command;
+    addRibbonIcon: AddRibbonIcon;
+    getLogs: () => string;
+    app: App;
+  });
+  readonly start: () => void;
+  private readonly setupStatus;
+  private readonly setupCommands;
+  private readonly exportLogs;
+  readonly dispose: () => void;
+  root: {
+    executionProgress: Ref<Progress<TaskInfo>>;
+    exportLogs: () => Promise<void>;
+    syncStage: Ref<SyncStage>;
+    walkProgress: Ref<Progress>;
+  };
+}
 type DeleteConfirmReturn = {
   delete: Array<RemoveLocal>;
   reupload: Array<RemoveLocal>;
@@ -1098,7 +949,7 @@ declare class ProgressModal extends Modal {
     executionProgress: Ref<Progress<TaskInfo>>;
   });
   readonly events: {
-    tasksConfirmed: Array<BaseTask>;
+    tasksConfirmed: Array<Task>;
     deleteConfirmed: DeleteConfirmReturn;
   };
   readonly i18n: {
@@ -1129,8 +980,6 @@ declare class ProgressModal extends Modal {
   onClose(): void;
   dispose(): void;
 }
-//#endregion
-//#region src/modules/Scheduler.d.ts
 declare class Scheduler {
   private readonly ctx;
   private readonly pendingRequests;
@@ -1171,8 +1020,6 @@ declare class Scheduler {
     stopScheduledSync: () => void;
   };
 }
-//#endregion
-//#region src/index.d.ts
 declare const internalModules: readonly [typeof EventBus, typeof I18n, typeof Storage, typeof Extensibility, typeof Setting$1, typeof Registrar, typeof Sync, typeof Observability, typeof Scheduler, typeof ProgressModal, typeof Bootstrap];
 type InternalModules = typeof internalModules;
 type MergeKeys = 'settings' | 'root' | 'events' | 'i18n';
@@ -1187,8 +1034,87 @@ type Context = Context$1<InternalModules, MergeKeys, {
 type Events = MergeSingleKey<InternalModules, 'events'>;
 type Settings = MergeSingleKey<InternalModules, 'settings'>;
 type Translations = MergeSingleKey<InternalModules, 'i18n'>;
-//#endregion
-//#region src/modules/Registrar.d.ts
+type GlobMatchResult = {
+  strategy: string;
+  advance?: boolean;
+};
+type SyncTerminateReason = {
+  result: 'cancelled';
+} | {
+  result: 'completed';
+} | {
+  result: 'failed';
+  error: Error;
+} | {
+  result: 'noop';
+};
+type TaskInfo = {
+  name: TaskNames;
+  key: string;
+  isDir: boolean;
+};
+type FailedTaskInfo = TaskInfo & {
+  error: Error;
+};
+type RemoteLister = (info: Infras & {
+  reporter: ListReporter;
+}) => MaybePromise<Array<Stat$1>>;
+type SyncOptions = {
+  remoteLister?: RemoteLister;
+  conflictResolver?: ConflictResolver;
+  detectMoves?: boolean;
+  needConfirmTasks?: boolean;
+  needConfirmDeletion?: boolean;
+  syncStrategy?: Array<GlobStrategy>;
+};
+declare class Sync {
+  private readonly ctx;
+  constructor(ctx: {
+    dispatch: Dispatch<Events>;
+    initializeSync: () => Infras;
+    on: On<Events>;
+    translate: Translate<Translations>;
+    getConflictResolver: () => ConflictResolver;
+    decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<Task>;
+  });
+  readonly events: {
+    syncStarted: {
+      isCancelled: Ref<boolean>;
+      trigger: string;
+    };
+    syncInitialized: Infras & {
+      match: (path: string) => GlobMatchResult;
+    };
+    remoteWalkProgress: Progress;
+    syncTerminated: SyncTerminateReason;
+    requestConfirmDelete: Array<RemoveLocal>;
+    requestConfirmTasks: Array<Task>;
+    syncCanceled: undefined;
+    taskCompleted: TaskInfo;
+    taskFailed: FailedTaskInfo;
+    executionStarted: Array<Task>;
+  };
+  readonly settings: {
+    maxFileSize: TogglableValue;
+    syncStrategy: Array<GlobStrategy>;
+  };
+  readonly i18n: {
+    xOperationsFailed: Snippet<number>;
+  };
+  private readonly postProcess;
+  private readonly confirmTasks;
+  private readonly confirmDeletion;
+  private readonly executeSync;
+  private readonly convertDeleteToUpload;
+  root: {
+    executeSync: (trigger: string, options?: SyncOptions) => Promise<SyncTerminateReason>;
+  };
+}
+type StrategyMapping = Record<string, {
+  localStats: StatsMap;
+  remoteStats: StatsMap;
+  records: RecordStatsMap;
+}>;
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = {
   priority: number;
@@ -1204,7 +1130,7 @@ type RemoteFsEntry = {
 };
 type DeciderEntry = {
   decider: Decider;
-  prettyName: () => string;
+  prettyName?: () => string;
 };
 type ConflictResolverEntry = {
   prettyName: () => string;
@@ -1238,12 +1164,6 @@ type RequestResponse = {
   status: number;
 };
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
-type DecideTasksInput = {
-  local: Record<string, StatsMap>;
-  remote: Record<string, StatsMap>;
-  record: Record<string, RecordStatsMap>;
-  taskFactory: TaskFactory;
-};
 declare class Registrar {
   private readonly ctx;
   private readonly cleanupCallbacks;
@@ -1289,7 +1209,7 @@ declare class Registrar {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
     createRemoteFs: (remoteFs?: string) => Fs | Error;
-    decideTasks: ({ local, record, remote, taskFactory }: DecideTasksInput) => BaseTask<TaskOptions>[];
+    decideTasks: (mapping: StrategyMapping, taskFactory: TaskFactory) => Task[];
     deciderRegistry: Map<string, DeciderEntry>;
     getCheckConnection: (remoteFs?: string) => () => MaybePromise<void | Error>;
     getConflictResolver: () => ConflictResolver;
@@ -1318,8 +1238,6 @@ declare class Registrar {
   };
   readonly dispose: () => void;
 }
-//#endregion
-//#region src/fs/vault/request.d.ts
 type VaultRequestParam = ({
   method: 'GET';
 } | {
@@ -1366,5 +1284,4 @@ type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-//#endregion
-export { RemoveLocal as $, s as A, FileStat as At, Snippet as B, readWithSize as C, MoveAtom as Ct, LabelDefinition as D, RootFs as Dt, setNeedMigration as E, OutputAtom as Et, RemoteLister as F, RecordStatsMap as Ft, CreateLocalDir as G, TranslationResource as H, SyncOptions as I, Stat$1 as It, TaskFactory as J, Decider as K, SyncTerminateReason as L, StatsMap as Lt, SettingEntry as M, MaybePromise as Mt, AugmentedModuleMeta as N, Progress as Nt, generateEditableList as O, WrappedFs as Ot, ModuleMeta as P, RecordStat as Pt, RemoveRecord as Q, Fragment as R, Binary as Rt, pipe as S, MkdirAtom as St, prefixWrapper as T, OptimizerOutput as Tt, Dispatch as U, Translate as V, On as W, ResolveConflict as X, Upload as Y, RemoveRemote as Z, ExistingMemoryDB as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, BaseTask as at, chunkSize as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, TaskNames as ct, RequestResponse as d, DatabaseSync as dt, MoveRemote as et, TriggerEntry as f, StoreAsync as ft, Translations as g, CustomAtom as gt, Settings as h, BatchOptimizer as ht, FsWrapperEntry as i, AddRecord as it, CallableOrObjectTree as j, FolderStat as jt, reactivelyValidate as k, WriteAtom as kt, Request as l, RecordStore as lt, Events as m, StoreSync as mt, ConflictResolverEntry as n, Download as nt, OptimizerEntry as o, ConflictResolver as ot, Context as p, StoreOperations as pt, DeciderInput as q, DeciderEntry as r, CreateRemoteDir as rt, RemoteFsEntry as s, ConflictResolverPayload as st, VaultRequest as t, MoveLocal as tt, RequestParam as u, DatabaseAsync as ut, SelectFromContext as v, Fs as vt, writeWithValue as w, OptimizerInput as wt, concurrency as x, ListReporter as xt, digOriginal as y, InputAtom as yt, ObsidianLanguageCode as z };
+export { Download as $, LabelDefinition as A, FileStat as At, TaskFactory as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, TaskNames as G, ConflictResolver as H, AugmentedModuleMeta as I, Stat$1 as It, RemoveRemote as J, Upload as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, s as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, MoveLocal as Q, Decider as R, Binary as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, ConflictResolverPayload as U, AddRecord as V, Task as W, RemoveLocal as X, RemoveRecord as Y, MoveRemote as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, Snippet as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, Dispatch as ct, RequestResponse as d, DatabaseSync as dt, CreateRemoteDir as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, ObsidianLanguageCode as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, On as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RecordStore as nt, OptimizerEntry as o, Translate as ot, RemoteLister as p, StoreOperations as pt, ResolveConflict as q, DeciderEntry as r, Fragment as rt, RemoteFsEntry as s, TranslationResource as st, VaultRequest as t, CreateLocalDir as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, DeciderInput as z };

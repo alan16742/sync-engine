@@ -1,6 +1,6 @@
-import type { Binary, StoreSync } from '@hesprs/sync-engine-sdk';
 import { gcmsiv } from '@noble/ciphers/aes.js';
 import { textToUint8Array, uint8ArrayToText } from '@repo/shared/binary';
+import type { Binary, StoreSync } from '@hesprs/sync-engine-sdk';
 
 export type EncryptionStores = {
 	decryptedToEncrypted: StoreSync<string>;
@@ -96,7 +96,7 @@ function normalizeBasename(basename: string) {
 
 function encodeBase64Url(bytes: Binary): string {
 	const binary = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
-	return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/u, '');
+	return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/[=]+$/u, '');
 }
 
 function decodeBase64Url(value: string): Binary {

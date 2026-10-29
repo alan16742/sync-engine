@@ -1,10 +1,10 @@
-import { normalizeUrl } from '@repo/shared/path';
+import { reactivelyValidate } from '@/settings/utils';
+import sha256 from '@/utils/sha-256';
+import { formatUrl, parseUrl } from '@repo/shared/path';
 import { App, Modal, Setting } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { MaybePromise } from '@/types';
-import { reactivelyValidate } from '@/settings/utils';
-import sha256 from '@/utils/sha-256';
 
 export type ModuleEditorTranslations = {
 	editModuleInformation: string;
@@ -37,7 +37,7 @@ export default class ModuleEditorModal extends Modal {
 	constructor(
 		private readonly ctx: { app: App; translate: Translate<ModuleEditorTranslations> },
 		private readonly options: {
-			initial: Partial<AugmentedModuleMeta> & { id: string };
+			initial?: Partial<AugmentedModuleMeta>;
 			file?: string;
 			onSave: (updated: AugmentedModuleMeta) => MaybePromise<void>;
 			onCancel?: () => MaybePromise<void>;
@@ -60,7 +60,8 @@ export default class ModuleEditorModal extends Modal {
 			version,
 			main = '',
 			readme,
-		} = initial;
+			id,
+		} = initial ?? {};
 
 		const magic = file ? parseMagicBytes(file) : {};
 		const updated: AugmentedModuleMeta = {
@@ -68,6 +69,7 @@ export default class ModuleEditorModal extends Modal {
 			description: description || magic.description || 'An unknown module.',
 			enabled,
 			icon: icon || magic.icon || 'puzzle',
+			id: id || name || magic.name || crypto.randomUUID(),
 			integrity,
 			main,
 			name: name || magic.name || 'Unknown Module',
@@ -139,7 +141,7 @@ export default class ModuleEditorModal extends Modal {
 					parse: (value) => {
 						if (!value.trim()) return '';
 						try {
-							return normalizeUrl(value);
+							return parseUrl(value);
 						} catch {
 							// Return undefined
 						}
@@ -152,15 +154,16 @@ export default class ModuleEditorModal extends Modal {
 			.setName(translate('readmePage'))
 			.setDesc(translate('readmePageDescription'))
 			.addText((text) => {
-				text.setValue(updated.readme ?? '').setPlaceholder(
+				text.setValue(formatUrl(updated.readme ?? '')).setPlaceholder(
 					translate('readmePagePlaceholder'),
 				);
 				reactivelyValidate<string>({
+					format: formatUrl,
 					onSave: (value) => (updated.source = value),
 					parse: (value) => {
 						if (!value.trim()) return '';
 						try {
-							return normalizeUrl(value);
+							return parseUrl(value);
 						} catch {
 							// Return undefined
 						}

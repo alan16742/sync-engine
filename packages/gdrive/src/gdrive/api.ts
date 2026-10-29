@@ -1,10 +1,12 @@
+import { compileQuery } from '@repo/shared/path';
 import type { RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
 
 export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 export const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 export const OAUTH_DEVICE_CODE_URL = 'https://oauth2.googleapis.com/device/code';
 export const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-export const OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file openid';
+export const OAUTH_SCOPES = ['https://www.googleapis.com/auth/drive.file', 'openid'];
+export const OAUTH_SCOPE = OAUTH_SCOPES.join(' ');
 export const FOLDER_MIME = 'application/vnd.google-apps.folder';
 export const FILE_FIELDS = 'id,name,mimeType,md5Checksum,modifiedTime,size,parents,appProperties';
 export const TOKEN_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
@@ -20,13 +22,17 @@ export type DriveFile = {
 	appProperties?: Record<string, string>;
 };
 
-export type DriveFileList = {
-	files?: Array<DriveFile>;
-	nextPageToken?: string;
-};
+export type DriveFileList = { files?: Array<DriveFile>; nextPageToken?: string };
 
 type DriveError = {
-	error?: { code?: number; message?: string } | string;
+	error?:
+		| {
+				code?: number;
+				message?: string;
+				errors?: Array<{ reason?: string }>;
+				details?: Array<{ reason?: string }>;
+		  }
+		| string;
 	error_description?: string;
 };
 
@@ -36,9 +42,8 @@ export function escapeQuery(value: string): string {
 }
 
 export function buildUrl(base: string, path: string, query: Record<string, string> = {}): string {
-	const url = new URL(`${base}${path}`);
-	for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
-	return url.toString();
+	const queryString = compileQuery(query);
+	return `${base}${path}${queryString ? `?${queryString}` : ''}`;
 }
 
 export function getHeader(
@@ -55,8 +60,12 @@ export function parseDriveError(response: RequestResponse): string | undefined {
 	try {
 		const { error, error_description } = response.json<DriveError>();
 		if (typeof error === 'string') return `Google Drive ${error}: ${error_description ?? ''}`;
-		if (error?.message)
-			return `Google Drive ${error.code ?? response.status}: ${error.message}`;
+		if (error?.message) {
+			const reason = [...(error.errors ?? []), ...(error.details ?? [])].find(
+				(entry) => entry.reason,
+			)?.reason;
+			return `Google Drive ${error.code ?? response.status}: ${error.message}${reason ? ` (${reason})` : ''}`;
+		}
 	} catch {
 		// Non-JSON error body (e.g. empty 503 responses).
 	}

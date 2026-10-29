@@ -1,12 +1,12 @@
-import type { Vault, Stat, ListedFiles, App, DataWriteOptions } from 'obsidian';
+import { OS } from '@/modules/EventBus';
+import { chunkSize, concurrency } from '@/utils/pipe';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import { requestNative } from '@repo/shared/e2e-utils.spec';
 import { basename, isFolder, stripEndSlash } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import { TFile, TFolder } from 'obsidian';
 import type { Binary, MaybePromise } from '@/types';
-import { OS } from '@/modules/EventBus';
-import { chunkSize, concurrency } from '@/utils/pipe';
+import type { Vault, Stat, ListedFiles, App, DataWriteOptions } from 'obsidian';
 
 export const TEMP_FOLDER = '.trash';
 
@@ -64,6 +64,7 @@ function toVaultPath(key: string) {
 	return stripEndSlash(key);
 }
 
+// Obsidian already normalizes all file paths to NFC
 function toKey(vaultPath: string, isDir: boolean): string {
 	if (vaultPath === '/') return '/';
 	return isDir ? `${vaultPath}/` : vaultPath;
@@ -146,6 +147,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 		if (method === 'MOVE')
 			return adapter.rename(path, toVaultPath(params.destination)) as never;
 		if (method === 'MKDIR')
+			// Obsidian adapter mkdir is no-op when target already exists
 			return (
 				key === '/' ? undefined : withCheckChars(key, () => adapter.mkdir(path))
 			) as never;

@@ -1,12 +1,12 @@
-import { test, expect } from 'bun:test';
 import { testKit } from '@/sdk/dev';
 import prefixWrapper from '@/sdk/prefix';
+import { test, expect } from 'bun:test';
 
 const { bytes, file, folder, fs: testFs, stream } = testKit;
 
 test('base-dir shim rewrites keys relative to its base', async () => {
 	const remote = testFs({ uid: 'remote' });
-	const shim = prefixWrapper(remote.fs, '/base');
+	const shim = prefixWrapper(remote.fs, 'base/');
 
 	expect(shim.getUid()).toBe('remote~base/');
 

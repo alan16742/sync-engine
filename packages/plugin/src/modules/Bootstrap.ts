@@ -1,17 +1,3 @@
-import type { Events, Translations } from '@';
-import type { App, SecretStorage } from 'obsidian';
-import type { Ref } from 'synthkernel';
-import type { DatabaseSync } from 'uni-kv';
-import type { FileTreeTranslations } from '@/components/file-tree';
-import type { UntrustedModuleTranslations } from '@/components/UntrustedModuleModal';
-import type { BatchOptimizer, Fs, MemoryControlSharedState } from '@/fs';
-import type { ControlsSettingTranslations } from '@/settings/controls';
-import type { DevelopmentSettingTranslations } from '@/settings/development';
-import type { FeaturesSettingTranslations } from '@/settings/features';
-import type { HeadSettingTranslations } from '@/settings/head';
-import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
-import type { ModulesTranslations } from '@/settings/module-management';
-import type { Stat, TogglableValue } from '@/types';
 import en from '@/en';
 import {
 	rateLimiterMiddleware,
@@ -34,7 +20,9 @@ import {
 	keepRemoteResolver,
 	latestSurviveResolver,
 	renameAndKeepBothResolver,
+	pholderDecider,
 } from '@/sync';
+import { NONE_STRATEGY } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
 import type { ObsidianLanguageCode, Translate, TranslationResource } from './I18n';
 import type {
@@ -47,6 +35,20 @@ import type {
 	LocalRequestMiddlewareEntry,
 	TriggerEntry,
 } from './Registrar';
+import type { Events, Translations } from '@';
+import type { FileTreeTranslations } from '@/components/file-tree';
+import type { UntrustedModuleTranslations } from '@/components/UntrustedModuleModal';
+import type { BatchOptimizer, Fs, MemoryControlSharedState } from '@/fs';
+import type { ControlsSettingTranslations } from '@/settings/controls';
+import type { DevelopmentSettingTranslations } from '@/settings/development';
+import type { FeaturesSettingTranslations } from '@/settings/features';
+import type { HeadSettingTranslations } from '@/settings/head';
+import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
+import type { ModulesTranslations } from '@/settings/module-management';
+import type { Stat, TogglableValue } from '@/types';
+import type { App, SecretStorage } from 'obsidian';
+import type { Ref } from 'synthkernel';
+import type { DatabaseSync } from 'uni-kv';
 
 export type CustomHeaders = Array<{ type: 'plaintext' | 'secret'; value: string; key: string }>;
 export type ExistingMemoryDB = DatabaseSync<
@@ -85,6 +87,7 @@ export default class Bootstrap {
 		keepRemote: string;
 		renameAndKeepBoth: string;
 		skip: string;
+		dontSync: string;
 	} & ControlsSettingTranslations &
 		DevelopmentSettingTranslations &
 		FeaturesSettingTranslations &
@@ -366,6 +369,11 @@ export default class Bootstrap {
 			decider: (input) => mirrorRemoteDecider(input, logger),
 			prettyName: () => t('mirrorRemote'),
 		});
+		registerDecider(NONE_STRATEGY, {
+			// The only case for "none" strategy is pholder
+			decider: (input) => pholderDecider(input, logger),
+			prettyName: () => t('dontSync'),
+		});
 
 		registerConflictResolver('renameAndKeepBoth', {
 			prettyName: () => t('renameAndKeepBoth'),
@@ -383,10 +391,7 @@ export default class Bootstrap {
 			prettyName: () => t('keepRemote'),
 			resolver: keepRemoteResolver,
 		});
-		registerConflictResolver('skip', {
-			prettyName: () => t('skip'),
-			resolver: () => {},
-		});
+		registerConflictResolver('skip', { prettyName: () => t('skip'), resolver: () => {} });
 
 		this.cleanupCallbacks.push(
 			on('syncStarted', ({ isCancelled }) => (this.isCancelled = isCancelled)),

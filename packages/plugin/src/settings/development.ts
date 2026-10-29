@@ -1,12 +1,12 @@
-import type { Settings } from '@';
-import type { SettingGroupItem } from 'obsidian';
-import type { DatabaseSync } from 'uni-kv';
-import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
+import { generateEditableList, reactivelyValidate, s } from './utils';
+import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
 import { Notice } from 'obsidian';
+import type { Settings } from '@';
 import type { Snippet, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General, MaybePromise } from '@/types';
-import { generateEditableList, reactivelyValidate, s } from './utils';
+import type { SettingGroupItem } from 'obsidian';
+import type { DatabaseSync } from 'uni-kv';
 
 export type DevelopmentSettingTranslations = {
 	development: string;
@@ -112,8 +112,9 @@ export default function developmentSettings({
 									setting.addText((text) => {
 										text.setPlaceholder(
 											translate('moduleSourcePlaceholder'),
-										).setValue(item.value);
+										).setValue(formatUrl(item.value));
 										reactivelyValidate<string>({
+											format: formatUrl,
 											immediate: true,
 											onSave: (value) => {
 												item.value = value;
@@ -122,7 +123,7 @@ export default function developmentSettings({
 											parse: (value) => {
 												try {
 													item.value = value;
-													const url = normalizeUrl(value);
+													const url = parseUrl(value);
 													item.valid = true;
 													return url;
 												} catch {

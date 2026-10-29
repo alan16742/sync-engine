@@ -1,21 +1,3 @@
-import type {
-	Binary,
-	FileStat,
-	FolderStat,
-	ListReporter,
-	Request,
-	RequestParam,
-	RequestResponse,
-	RootFs,
-	Stat,
-} from '@hesprs/sync-engine-sdk';
-import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import { getStatus, toError } from '@repo/shared/error';
-import normalizeEtag from '@repo/shared/normalize-etag';
-import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
-import createRangeReadStream from '@repo/shared/read-stream';
-import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
 import { md5Base64 } from './sigv4';
 import { buildUrl, buildUrlWithQuery, getHeader } from './url';
@@ -27,6 +9,24 @@ import {
 	rootValue,
 	toMetaHeaders,
 } from './utils';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
+import { concatBinary, textToUint8Array } from '@repo/shared/binary';
+import { getStatus, toError } from '@repo/shared/error';
+import normalizeEtag from '@repo/shared/normalize-etag';
+import { dirname, isFolder, parseUrl } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
+import type { UrlStyle } from './sigv4';
+import type {
+	Binary,
+	FileStat,
+	FolderStat,
+	ListReporter,
+	Request,
+	RequestParam,
+	RequestResponse,
+	RootFs,
+	Stat,
+} from '@hesprs/sync-engine-sdk';
 
 export type S3FsOptions = {
 	accessKeyId: string;
@@ -45,20 +45,11 @@ type S3ListBucketResult = {
 	NextContinuationToken?: string;
 };
 
-type S3DeleteError = {
-	Key?: string;
-	Code?: string;
-	Message?: string;
-};
+type S3DeleteError = { Key?: string; Code?: string; Message?: string };
 
 type S3DeleteResponse = { Error?: S3DeleteError | Array<S3DeleteError> };
 
-type S3Object = {
-	Key?: string;
-	Size?: string;
-	ETag?: string;
-	LastModified?: string;
-};
+type S3Object = { Key?: string; Size?: string; ETag?: string; LastModified?: string };
 
 const mtimeMissing = new Error('S3 did not return last modified time for objects!');
 const sizeMissing = new Error('S3 did not return size for objects!');
@@ -213,8 +204,8 @@ export default class S3Fs implements RootFs {
 	}
 
 	/**
-	 * Batch delete — S3-specific extension method accessed by the optimizer.
-	 * Up to 1000 keys per DeleteObjects request.
+	 * Batch delete — S3-specific extension method accessed by the optimizer. Up to 1000 keys per
+	 * DeleteObjects request.
 	 */
 	async batchDelete(keys: Array<string>): Promise<Record<string, Error>> {
 		const result: Record<string, Error> = {};
@@ -259,10 +250,9 @@ export default class S3Fs implements RootFs {
 		return result;
 	}
 
-	async move(oldKey: string, newKey: string): Promise<void> {
-		// S3 has no native rename — copy then delete
-		const copySource = `${this.bucket}/${encodeUrl(oldKey)}`;
-		const destUrl = this.buildUrl(newKey);
+	private async copy(source: string, destination: string): Promise<void> {
+		const copySource = `${this.bucket}/${parseUrl(source, true)}`;
+		const destUrl = this.buildUrl(destination);
 		await this.requestOrThrow(destUrl, {
 			headers: {
 				'Content-Type': 'application/octet-stream',
@@ -270,7 +260,31 @@ export default class S3Fs implements RootFs {
 			},
 			method: 'PUT',
 		});
+	}
+
+	async move(oldKey: string, newKey: string): Promise<void> {
+		// S3 has no native rename, copy then delete
+		await this.copy(oldKey, newKey);
 		await this.delete(oldKey);
+	}
+
+	async batchMove(
+		moves: Array<{ oldKey: string; newKey: string }>,
+	): Promise<Record<string, Error>> {
+		const result: Record<string, Error> = {};
+		await Promise.all(
+			moves.map(({ oldKey, newKey }) =>
+				this.copy(oldKey, newKey).catch(
+					(error: unknown) => (result[oldKey] = toError(error)),
+				),
+			),
+		);
+		return Object.assign(
+			result,
+			await this.batchDelete(
+				moves.map(({ oldKey }) => oldKey).filter((oldKey) => !result[oldKey]),
+			),
+		);
 	}
 
 	async mkdir(key: string, { meta }: FolderStat, recursive?: boolean): Promise<void> {
@@ -354,6 +368,7 @@ export default class S3Fs implements RootFs {
 						})) === 'exclude'
 					)
 						return;
+					Key = Key.normalize('NFC');
 					const meta = () => this.fetchMeta(Key);
 					if (isFolder(Key)) results.push({ isDir: true, key: Key, meta });
 					else {

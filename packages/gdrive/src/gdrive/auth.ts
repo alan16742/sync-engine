@@ -1,13 +1,14 @@
-import type { Request } from '@hesprs/sync-engine-sdk';
-import { getStatus } from '@repo/shared/error';
-import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import {
 	buildUrl,
 	OAUTH_DEVICE_CODE_URL,
 	OAUTH_SCOPE,
+	OAUTH_SCOPES,
 	OAUTH_TOKEN_URL,
 	TOKEN_REVOKE_URL,
 } from './api';
+import { getStatus } from '@repo/shared/error';
+import { Platform, requestUrl, SecretStorage } from 'obsidian';
+import type { Request } from '@hesprs/sync-engine-sdk';
 
 export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
 export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
@@ -16,6 +17,7 @@ const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage
 type TokenResponse = {
 	access_token: string;
 	expires_in: number;
+	scope: string;
 	refresh_token?: string;
 	id_token?: string;
 };
@@ -128,14 +130,19 @@ export async function pollDeviceToken(options: {
 		}
 		const data = response.json as TokenResponse | TokenError;
 		if ('access_token' in data)
-			if (data.refresh_token && data.id_token)
+			if (data.refresh_token && data.id_token) {
+				// Google may grant fewer scopes than requested, e.g. when a Workspace admin restricts the app.
+				if (!OAUTH_SCOPES.every((scope) => data.scope.split(' ').includes(scope)))
+					throw new Error(
+						'Google did not grant the requested permissions. Please allow all of them and connect again.',
+					);
 				return {
 					accessToken: data.access_token,
 					expiresIn: data.expires_in,
 					refreshToken: data.refresh_token,
 					userId: extractSub(data.id_token),
 				};
-			else throw new Error('Google authorization payload is malformed!');
+			} else throw new Error('Google authorization payload is malformed!');
 		switch (data.error) {
 			case 'authorization_pending': {
 				continue;
@@ -173,7 +180,11 @@ export function revokeToken(token: string) {
 	}).catch(() => {});
 }
 
-/** Caches the short-lived access token and refreshes it with the stored refresh token when needed. One instance is shared by the request middleware and the connection check so a token refresh happens at most once at a time. */
+/**
+ * Caches the short-lived access token and refreshes it with the stored refresh token when needed.
+ * One instance is shared by the request middleware and the connection check so a token refresh
+ * happens at most once at a time.
+ */
 export class TokenManager {
 	private accessToken?: string;
 	private expiresAt = 0;

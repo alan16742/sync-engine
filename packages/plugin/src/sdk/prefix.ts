@@ -1,4 +1,3 @@
-import { normalizeBaseDir } from '@repo/shared/path';
 import type { Fs, ListReporter, WrappedFs } from '@/fs';
 import type { Binary, FileStat, FolderStat, MaybePromise, Stat } from '@/types';
 
@@ -70,17 +69,12 @@ class PrefixFs implements WrappedFs {
 
 	async list(key: string, reporter: ListReporter) {
 		const stats = await this.original.list(joinKey(this.prefix, key), (progress) =>
-			reporter(
-				Object.assign(progress, {
-					current: stripKey(this.prefix, progress.current),
-				}),
-			),
+			reporter(Object.assign(progress, { current: stripKey(this.prefix, progress.current) })),
 		);
 		return stripKeyFromStats(this.prefix, stats);
 	}
 }
 
 export default function prefixWrapper(original: Fs, prefix: string): WrappedFs {
-	const normalizedPrefix = normalizeBaseDir(prefix);
-	return new PrefixFs(original, normalizedPrefix);
+	return new PrefixFs(original, prefix);
 }

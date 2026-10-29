@@ -1,12 +1,12 @@
 import testKit from '$/test-kit';
-import { expect, test } from 'bun:test';
-import type { BaseTask, TaskNames } from '@/sync';
-import type { RecordStatsMap, Stat } from '@/types';
 import { convertMoves } from '@/sync';
+import { expect, test } from 'bun:test';
+import type { Task, TaskNames } from '@/sync';
+import type { RecordStatsMap, Stat } from '@/types';
 
 const { file, folder } = testKit;
 
-function makeTask(input: { name: TaskNames; key: string; local?: Stat; remote?: Stat }): BaseTask {
+function makeTask(input: { name: TaskNames; key: string; local?: Stat; remote?: Stat }): Task {
 	const options = {
 		key: input.key,
 		local: input.local,
@@ -15,23 +15,11 @@ function makeTask(input: { name: TaskNames; key: string; local?: Stat; remote?: 
 		remote: input.remote,
 		remoteFs: {},
 	};
-	return {
-		exec: () => {},
-		key: input.key,
-		local: input.local,
-		name: input.name,
-		options,
-		prettyName: input.name,
-		remote: input.remote,
-	} as BaseTask;
+	return { ...input, exec: () => {}, options } as Task;
 }
 
-function translate(name: TaskNames) {
-	return `translated:${name}`;
-}
-
-function oldKey(task: BaseTask) {
-	return (task.options as { oldKey?: string }).oldKey;
+function newKey({ options }: Task) {
+	return (options as { newKey: string }).newKey;
 }
 
 test('pairs file tasks using opposite-side record UIDs', () => {
@@ -51,12 +39,11 @@ test('pairs file tasks using opposite-side record UIDs', () => {
 		['old.md', { isDir: false, local: 'local-old', remote: 'remote-new' }],
 	]);
 
-	const [move] = convertMoves(tasks, translate, records);
+	const [move] = convertMoves(tasks, records);
 
 	expect(move.name).toBe('moveLocal');
-	expect(move.key).toBe('new.md');
-	expect(oldKey(move)).toBe('old.md');
-	expect(move.prettyName).toBe('translated:moveLocal');
+	expect(newKey(move)).toBe('new.md');
+	expect(move.key).toBe('old.md');
 });
 
 test('keeps folder tasks when child basenames change', () => {
@@ -78,16 +65,14 @@ test('keeps folder tasks when child basenames change', () => {
 		['old/note.md', { isDir: false, local: 'note-local', remote: 'note-remote' }],
 	]);
 
-	const result = convertMoves(tasks, translate, records);
+	const result = convertMoves(tasks, records);
 
 	expect(result.map((task) => task.name)).toStrictEqual([
 		'removeLocal',
 		'createLocalDir',
 		'moveLocal',
 	]);
-	expect(oldKey(result.find((task) => task.name === 'moveLocal') as BaseTask)).toBe(
-		'old/note.md',
-	);
+	expect(result.find((task) => task.name === 'moveLocal')?.key).toBe('old/note.md');
 });
 
 test('collapses nested folders while retaining child moves', () => {
@@ -111,9 +96,9 @@ test('collapses nested folders while retaining child moves', () => {
 		['old/nested/note.md', { isDir: false, local: 'note-local', remote: 'note-remote' }],
 	]);
 
-	const result = convertMoves(tasks, translate, records);
+	const result = convertMoves(tasks, records);
 
-	expect(result.map((task) => [task.name, task.key, oldKey(task)])).toStrictEqual([
+	expect(result.map((task) => [task.name, newKey(task), task.key])).toStrictEqual([
 		['moveLocal', 'new/nested/note.md', 'old/nested/note.md'],
 		['moveLocal', 'new/nested/', 'old/nested/'],
 		['moveLocal', 'new/', 'old/'],

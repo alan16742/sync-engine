@@ -1,8 +1,8 @@
+import man from '../../manifest.json' with { type: 'json' };
 import UnoCSS from '@unocss/postcss';
 import postcssMergeRules from 'postcss-merge-rules';
 import { defineConfig } from 'tsdown';
 import solid from 'unplugin-solid/rolldown';
-import man from '../../manifest.json' with { type: 'json' };
 
 const buildingPlugin = process.env.BUILD === 'plugin';
 const dtsPass = process.env.PASS === 'dts';
@@ -45,7 +45,7 @@ const pluginConfig = defineConfig({
 const sdkConfig = defineConfig({
 	...sharedConfig,
 	clean: dtsPass,
-	dts: dtsPass ? { eager: true } : false,
+	dts: dtsPass ? { tsc: { eager: true } } : false,
 	entry: {
 		dev: 'src/sdk/dev.ts',
 		index: 'src/sdk/index.ts',

@@ -1,32 +1,29 @@
+export { default as AddRecord } from './tasks/AddRecord';
 export { default as CreateLocalDir } from './tasks/CreateLocalDir';
 export { default as CreateRemoteDir } from './tasks/CreateRemoteDir';
 export { default as Download } from './tasks/Download';
-export { default as Upload } from './tasks/Upload';
-export { default as RemoveLocal } from './tasks/RemoveLocal';
-export { default as RemoveRemote } from './tasks/RemoveRemote';
-export { default as AddRecord } from './tasks/AddRecord';
-export { default as RemoveRecord } from './tasks/RemoveRecord';
-export { default as ResolveConflict } from './tasks/ResolveConflict';
 export { default as MoveLocal } from './tasks/MoveLocal';
 export { default as MoveRemote } from './tasks/MoveRemote';
+export { default as RemoveLocal } from './tasks/RemoveLocal';
+export { default as RemoveRecord } from './tasks/RemoveRecord';
+export { default as RemoveRemote } from './tasks/RemoveRemote';
+export { default as ResolveConflict } from './tasks/ResolveConflict';
+export { default as Upload } from './tasks/Upload';
+
+export { getTaskSide } from './tasks/interface';
 export type {
-	BaseTask,
-	BaseTaskOptions,
+	Task,
 	TaskNames,
 	ConflictResolver,
+	TaskOptionsMap,
 	ConflictResolverPayload,
 } from './tasks/interface';
-export type {
-	TaskOptions,
-	TaskFactory,
-	TaskOptionsMap,
-	Decider,
-	DeciderInput,
-} from './decision/interface';
+export type { TaskFactory, Decider, DeciderInput } from './decision/interface';
 export { taskMap } from './decision/interface';
 export { default as convertMoves } from './utils/detect-moves';
 export { default as bidirectionalDecider } from './decision/bidirectional';
 export { mirrorLocalDecider, mirrorRemoteDecider } from './decision/mirror';
+export { default as pholderDecider } from './decision/pholder';
 export { default as keepRemoteResolver } from './conflict-resolve/keep-remote';
 export { default as keepLocalResolver } from './conflict-resolve/keep-local';
 export { default as latestSurviveResolver } from './conflict-resolve/latest-survive';
