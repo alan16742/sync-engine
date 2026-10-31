@@ -118,6 +118,10 @@ const zh: Translations = {
 	failedToFetchSource: (url) => `从 “${url}” 获取源失败`,
 	failedToLoadModule: (name) => `加载模块 “${name}” 失败`,
 	features: '功能',
+	focusSync: '焦点同步',
+	focusSyncDescription:
+		'切换回 Obsidian 前台时自动触发同步。在输入框中修改距上一次同步的最小间隔。',
+	focusSyncPlaceholder: '输入最小间隔（例如 30s, 1min）',
 	globPlaceholder: '例如 temp.md, .trash/**/*',
 	headerKeyPlaceholder: '请求头键',
 	headerValuePlaceholder: '请求头值',

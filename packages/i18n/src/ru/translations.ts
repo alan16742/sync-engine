@@ -156,6 +156,10 @@ const ru: Translations = {
 	failedToFetchSource: (url) => `Не удалось получить источник из «${url}»`,
 	failedToLoadModule: (name) => `Не удалось загрузить модуль «${name}»`,
 	features: 'Возможности',
+	focusSync: 'Синхронизация при фокусе',
+	focusSyncDescription:
+		'Автоматически запускать синхронизацию при возвращении в Obsidian на передний план. Измените минимальный интервал с предыдущей синхронизации в поле.',
+	focusSyncPlaceholder: 'Введите минимальный интервал (например, 30s, 1min)',
 	globPlaceholder: 'Например, temp.md, .trash/**/*',
 	headerKeyPlaceholder: 'Ключ заголовка',
 	headerValuePlaceholder: 'Значение заголовка',
