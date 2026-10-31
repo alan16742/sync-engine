@@ -21,6 +21,9 @@ export type FeaturesSettingTranslations = {
 	scheduledSync: string;
 	scheduledSyncDescription: string;
 	scheduledSyncPlaceholder: string;
+	focusSync: string;
+	focusSyncDescription: string;
+	focusSyncPlaceholder: string;
 	asymmetricStorage: string;
 	asymmetricStorageDescription: Fragment;
 	asymmetricStorageMigration: Fragment<boolean>;
@@ -94,12 +97,22 @@ export default function featuresSettings(ctx: {
 					}),
 				})),
 				4000: s(() => ({
+					desc: translate('focusSyncDescription'),
+					name: translate('focusSync'),
+					render: renderTogglableValue({
+						field: settings.focusSync,
+						placeholder: translate('focusSyncPlaceholder'),
+						saveSettings,
+						type: 'time',
+					}),
+				})),
+				5000: s(() => ({
 					control: { key: 'realtimeSyncFastMode', type: 'toggle' },
 					desc: translate('realtimeSyncFastModeDescription'),
 					labels: [speedLabel()],
 					name: translate('realtimeSyncFastMode'),
 				})),
-				5000: s(() => ({
+				6000: s(() => ({
 					desc: translate('asymmetricStorageDescription'),
 					labels: [matchLabel(), speedLabel()],
 					name: translate('asymmetricStorage'),

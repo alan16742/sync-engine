@@ -192,14 +192,18 @@ export default class Bootstrap {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 2000,
 		});
-		registerTrigger('startup', {
+		registerTrigger('focus', {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 3000,
 		});
-		registerTrigger('nonInteractiveManual', { priority: 3990 });
+		registerTrigger('startup', {
+			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
+			priority: 4000,
+		});
+		registerTrigger('nonInteractiveManual', { priority: 4990 });
 		registerTrigger('manual', {
 			options: () => ({ needConfirmTasks: this.settings.confirmTasksInSync }),
-			priority: 4000,
+			priority: 5000,
 		});
 
 		registerLocalOptimizer({ apply: hierarchicalOptimizer, priority: 10_000 });
